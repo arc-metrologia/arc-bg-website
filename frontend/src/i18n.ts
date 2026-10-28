@@ -27,6 +27,10 @@ const strings = {
       sent: 'Запитването е изпратено. Ще ви отговорим в рамките на работния ден.',
     },
     download: 'Изтегляне',
+    kinds: { post: 'Новина', product: 'Продукт', service: 'Услуга', category: 'Категория', page: 'Страница' },
+    prev: 'Предишни',
+    next: 'Следващи',
+    slider: 'слайдер',
   },
   en: {
     skip: 'Skip to content',
@@ -54,6 +58,10 @@ const strings = {
       sent: 'Your enquiry has been sent. We will reply within the working day.',
     },
     download: 'Download',
+    kinds: { post: 'News', product: 'Product', service: 'Service', category: 'Category', page: 'Page' },
+    prev: 'Previous',
+    next: 'Next',
+    slider: 'carousel',
   },
 }
 

@@ -2,7 +2,8 @@ import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState, type
 import { api } from '../api'
 import { EditContext, type EditApi } from '../site/edit-context'
 import type { Block, Media, Me, Page, Payload } from '../types'
-import { BLOCKS, LISTING_SOURCES, blockLabel } from './blockDefs'
+import { BLOCKS, CAROUSEL_SOURCES, LISTING_SOURCES, blockLabel } from './blockDefs'
+import CarouselPages from './CarouselPages'
 import MediaLibrary from './MediaLibrary'
 import PageSettings from './PageSettings'
 import '../styles/edit.css'
@@ -90,6 +91,11 @@ export default function Editor({ payload, reload, render }: Props) {
     [],
   )
 
+  const patchBlock = useCallback(
+    (id: string, patch: Partial<Block>) => setBlocks((bs) => bs.map((b) => (b.id === id ? ({ ...b, ...patch } as Block) : b))),
+    [setBlocks],
+  )
+
   const api_: EditApi = useMemo(
     () => ({
       editing,
@@ -119,6 +125,15 @@ export default function Editor({ payload, reload, render }: Props) {
                   ))}
                 </select>
               )}
+              {block.type === 'carousel' && (
+                <select value={block.source} onChange={(e) => patchBlock(block.id, { source: e.target.value } as Partial<Block>)} aria-label="Какво показва слайдерът">
+                  {CAROUSEL_SOURCES.map((s) => (
+                    <option key={s.value} value={s.value}>
+                      {s.label}
+                    </option>
+                  ))}
+                </select>
+              )}
               <button type="button" onClick={() => move(-1)} disabled={index === 0} aria-label="Премести нагоре">
                 ↑
               </button>
@@ -133,6 +148,11 @@ export default function Editor({ payload, reload, render }: Props) {
                 ✕
               </button>
             </div>
+            {block.type === 'carousel' && block.source === 'manual' && (
+              <div className="wrap">
+                <CarouselPages lang={draft.lang} pages={block.pages} onChange={(pages) => patchBlock(block.id, { pages } as Partial<Block>)} />
+              </div>
+            )}
             {children}
             <Inserter index={index + 1} />
           </div>
@@ -141,7 +161,7 @@ export default function Editor({ payload, reload, render }: Props) {
       Inserter: ({ index }) => (editing ? <Inserter index={index} /> : null),
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [editing, change, setBlocks, pickMedia],
+    [editing, change, setBlocks, patchBlock, pickMedia, draft.lang],
   )
 
   function Inserter({ index }: { index: number }) {

@@ -4,6 +4,7 @@ import { t } from '../i18n'
 import type { Block, BlockOf, BlockType, Card, Media, Payload } from '../types'
 import { useEdit } from './edit-context'
 import { AddItem, ImageSlot, ItemTools, Rich, Text } from './editable'
+import Carousel from './Carousel'
 import Img from './Img'
 
 interface P<T extends BlockType> {
@@ -404,6 +405,15 @@ export function BlockView({ block, payload, set, first }: { block: Block; payloa
           <Cards items={payload.listings[block.id] ?? []} payload={payload} />
         </>
       )
+    case 'carousel': {
+      const items = payload.listings[block.id] ?? []
+      return (
+        <>
+          <Carousel items={items} media={payload.media} lang={lang} label={block.heading || t(lang).kinds.product} heading={<Heading block={block} set={set} />} />
+          {editing && !items.length && <p className="ed-hint">Слайдерът се попълва след „Запазете“ и когато има публикувани новини или продукти.</p>}
+        </>
+      )
+    }
     case 'testimonials': {
       const items = block.items
       const setItems = (items: BlockOf<'testimonials'>['items']) => set({ items })

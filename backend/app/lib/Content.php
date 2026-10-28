@@ -81,7 +81,11 @@ final class Content
         $lang = $page['lang'];
         $limit = (int)($block['limit'] ?? 0);
         $lim = $limit > 0 ? " LIMIT $limit" : '';
+        if ($block['type'] === 'carousel' && ($block['source'] ?? '') === 'manual') {
+            return self::cardsByIds($block['pages'] ?? []);
+        }
         $rows = match ($block['source'] ?? 'children') {
+            'latest' => Db::all("SELECT * FROM pages WHERE lang = ? AND type IN ('post', 'product') AND status = 'published' ORDER BY published_at DESC, sort_order$lim", [$lang]),
             'posts' => Db::all("SELECT * FROM pages WHERE lang = ? AND type = 'post' AND status = 'published' ORDER BY published_at DESC$lim", [$lang]),
             'products' => Db::all("SELECT * FROM pages WHERE lang = ? AND type = 'product' AND status = 'published' ORDER BY sort_order, title$lim", [$lang]),
             'services' => Db::all("SELECT * FROM pages WHERE lang = ? AND type = 'service' AND status = 'published' ORDER BY sort_order, title$lim", [$lang]),
@@ -93,6 +97,21 @@ final class Content
                 ),
         };
         return array_map([self::class, 'card'], $rows);
+    }
+
+    /** Публикувани страници като карти, в реда на подадените id-та. */
+    private static function cardsByIds(array $ids): array
+    {
+        $ids = array_values(array_filter(array_map('intval', $ids)));
+        if (!$ids) {
+            return [];
+        }
+        $in = implode(',', array_fill(0, count($ids), '?'));
+        $byId = [];
+        foreach (Db::all("SELECT * FROM pages WHERE status = 'published' AND id IN ($in)", $ids) as $r) {
+            $byId[(int)$r['id']] = self::card($r);
+        }
+        return array_values(array_filter(array_map(fn($id) => $byId[$id] ?? null, $ids)));
     }
 
     public static function breadcrumbs(array $page): array
@@ -140,26 +159,13 @@ final class Content
         $listings = [];
         foreach ($page['blocks'] as $b) {
             array_push($mediaIds, $b['image'] ?? null, $b['media'] ?? null, $b['poster'] ?? null, ...($b['images'] ?? []), ...($b['files'] ?? []));
-            if ($b['type'] === 'listing') {
+            if ($b['type'] === 'listing' || $b['type'] === 'carousel') {
                 $listings[$b['id']] = self::listing($row, $b);
                 array_push($mediaIds, ...array_column($listings[$b['id']], 'image'));
             }
         }
-        $related = [];
-        if ($page['related']) {
-            $ids = array_map('intval', $page['related']);
-            $in = implode(',', array_fill(0, count($ids), '?'));
-            $byId = [];
-            foreach (Db::all("SELECT * FROM pages WHERE status = 'published' AND id IN ($in)", $ids) as $r) {
-                $byId[(int)$r['id']] = self::card($r);
-            }
-            foreach ($ids as $id) {
-                if (isset($byId[$id])) {
-                    $related[] = $byId[$id];
-                }
-            }
-            array_push($mediaIds, ...array_column($related, 'image'));
-        }
+        $related = self::cardsByIds($page['related']);
+        array_push($mediaIds, ...array_column($related, 'image'));
         return [
             'page' => $page,
             'media' => (object)Media::many($mediaIds, $row['lang']),

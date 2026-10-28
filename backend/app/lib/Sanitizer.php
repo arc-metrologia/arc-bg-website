@@ -111,7 +111,7 @@ final class Sanitizer
     // ---------------------------------------------------------------- блокове
 
     public const BLOCK_TYPES = ['hero', 'richtext', 'image', 'gallery', 'video', 'features', 'steps', 'faq',
-        'specs', 'cta', 'listing', 'testimonials', 'logos', 'contact', 'downloads'];
+        'specs', 'cta', 'listing', 'carousel', 'testimonials', 'logos', 'contact', 'downloads'];
 
     /** Нормализира масив от блокове: само познати типове и полета, почистен HTML и URL-и. */
     public static function blocks(mixed $blocks): array
@@ -185,6 +185,11 @@ final class Sanitizer
             'listing' => [
                 'source' => in_array($b['source'] ?? '', ['children', 'posts', 'products', 'services'], true) ? $b['source'] : 'children',
                 'limit' => max(0, min(48, (int)($b['limit'] ?? 0))),
+            ],
+            'carousel' => [
+                'source' => in_array($b['source'] ?? '', ['latest', 'posts', 'products', 'manual'], true) ? $b['source'] : 'latest',
+                'pages' => array_slice(self::ids($b['pages'] ?? []), 0, 24),
+                'limit' => max(1, min(24, (int)($b['limit'] ?? 10))),
             ],
             'testimonials' => ['items' => self::items($b['items'] ?? [], ['quote' => 'text', 'author' => 'text', 'company' => 'text'])],
             'contact' => ['text' => self::text($b['text'] ?? '', 1000)],

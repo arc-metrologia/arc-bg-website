@@ -303,6 +303,38 @@ body.editing {
   border-left: 3px solid var(--ed);
 }
 
+.ed-carousel-pages {
+  margin: 16px 0 0;
+  padding: 14px;
+  background: #fff8e4;
+  border: 1px dashed var(--ed);
+  font-size: 0.9rem;
+}
+
+.ed-carousel-pages ol {
+  margin: 8px 0;
+  padding-left: 1.4em;
+}
+
+.ed-carousel-pages li {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 4px 0;
+}
+
+.ed-carousel-pages small {
+  color: var(--steel);
+}
+
+.ed-carousel-pages input {
+  font: inherit;
+  width: 100%;
+  padding: 7px 10px;
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+}
+
 /* Rich text */
 .ed-rich {
   border: 1px solid var(--ed);

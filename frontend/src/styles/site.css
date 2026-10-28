@@ -719,6 +719,142 @@ p {
   padding-top: 20px;
 }
 
+/* Слайдер с новини и продукти — scroll-snap, без автоматично въртене */
+.carousel-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.carousel-head h2 {
+  margin-bottom: 0;
+}
+
+.carousel-nav {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.carousel-nav button {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--petrol);
+  border-radius: 50%;
+  background: var(--paper);
+  color: var(--petrol);
+  cursor: pointer;
+}
+
+.carousel-nav button:hover:not(:disabled) {
+  background: var(--petrol);
+  color: #fff;
+}
+
+.carousel-nav button:disabled {
+  border-color: var(--rule);
+  color: var(--rule);
+  cursor: default;
+}
+
+.carousel-track {
+  list-style: none;
+  margin: 24px calc(var(--gutter) * -1) 0;
+  padding: 0 var(--gutter) 8px;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: min(360px, 80vw);
+  column-gap: 20px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-padding-inline: var(--gutter);
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+}
+
+.carousel-track::-webkit-scrollbar {
+  display: none;
+}
+
+.slide {
+  scroll-snap-align: start;
+}
+
+.slide a {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  color: inherit;
+  text-decoration: none;
+}
+
+.slide-media {
+  aspect-ratio: 16 / 10;
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  overflow: hidden;
+  transition: border-color 0.15s;
+}
+
+.slide-media:empty {
+  background: var(--plate);
+}
+
+.slide-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 12px;
+}
+
+.slide a:hover .slide-media {
+  border-color: var(--petrol);
+}
+
+.slide a:hover h3 {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+.slide-kind {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 14px 0 6px;
+  font-size: 0.85rem;
+  color: var(--steel);
+}
+
+/* Цветен маркер за типа: кехлибар за новини, петрол за продукти */
+.slide-kind::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  background: var(--petrol);
+}
+
+.slide-kind.kind-post::before {
+  background: var(--amber);
+}
+
+.slide h3 {
+  color: var(--petrol);
+}
+
+.slide-text {
+  color: var(--steel);
+  font-size: 0.95rem;
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
 /* Галерия и логота */
 .gallery {
   list-style: none;

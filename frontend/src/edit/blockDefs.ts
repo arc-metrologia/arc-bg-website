@@ -13,6 +13,7 @@ export const BLOCKS: { type: BlockType; label: string; hint: string; make(): Blo
   { type: 'steps', label: 'Стъпки', hint: 'Номериран процес', make: () => ({ id: id(), type: 'steps', heading: '', items: [{ title: '', text: '' }] }) },
   { type: 'faq', label: 'Въпроси и отговори', hint: 'Показва се и в Google и в AI отговорите', make: () => ({ id: id(), type: 'faq', heading: 'Често задавани въпроси', items: [{ q: '', a: '' }] }) },
   { type: 'downloads', label: 'Файлове за изтегляне', hint: 'PDF каталози и брошури', make: () => ({ id: id(), type: 'downloads', heading: 'Каталози', files: [] }) },
+  { type: 'carousel', label: 'Слайдер', hint: 'Хоризонтална лента с новини и продукти', make: () => ({ id: id(), type: 'carousel', heading: 'Новини и продукти', source: 'latest', pages: [], limit: 10 }) },
   { type: 'listing', label: 'Автоматичен списък', hint: 'Подстраници, продукти, услуги или статии', make: () => ({ id: id(), type: 'listing', heading: '', source: 'children', limit: 0 }) },
   { type: 'testimonials', label: 'Препоръки', hint: 'Цитати от клиенти', make: () => ({ id: id(), type: 'testimonials', heading: '', items: [{ quote: '', author: '', company: '' }] }) },
   { type: 'logos', label: 'Логота', hint: 'Партньори или клиенти', make: () => ({ id: id(), type: 'logos', heading: '', images: [] }) },
@@ -27,6 +28,13 @@ export const LISTING_SOURCES = [
   { value: 'products', label: 'Всички продукти' },
   { value: 'services', label: 'Всички услуги' },
   { value: 'posts', label: 'Статии от блога (най-новите първо)' },
+] as const
+
+export const CAROUSEL_SOURCES = [
+  { value: 'latest', label: 'Най-новите новини и продукти' },
+  { value: 'posts', label: 'Само новини (статии от блога)' },
+  { value: 'products', label: 'Само продукти' },
+  { value: 'manual', label: 'Избрани ръчно' },
 ] as const
 
 export const TYPE_LABELS = {

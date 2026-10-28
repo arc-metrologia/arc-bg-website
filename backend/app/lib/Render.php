@@ -178,6 +178,32 @@ final class Render
         return $o . '</ul>';
     }
 
+    /** Хоризонтален слайдер. Без JS е обикновен хоризонтално превъртащ се списък; React добавя стрелките. */
+    private static function carousel(array $b, array $items): string
+    {
+        $kinds = self::KINDS[self::$site['lang']] ?? self::KINDS['bg'];
+        $o = '<div class="carousel"><div class="carousel-head">' . self::heading($b) . '</div><ul class="carousel-track">';
+        foreach ($items as $it) {
+            $o .= '<li class="slide"><a href="' . e($it['url']) . '">';
+            $o .= '<div class="slide-media">' . self::img(self::media($it['image']), '(min-width: 900px) 360px, 80vw') . '</div>';
+            $o .= '<p class="slide-kind kind-' . e($it['type']) . '">' . e($kinds[$it['type']] ?? '');
+            if ($it['type'] === 'post' && $it['publishedAt']) {
+                $o .= ' · <time datetime="' . e(substr($it['publishedAt'], 0, 10)) . '">' . e(date('d.m.Y', strtotime($it['publishedAt']))) . '</time>';
+            }
+            $o .= '</p><h3>' . e($it['title']) . '</h3>';
+            if ($it['excerpt']) {
+                $o .= '<p class="slide-text">' . e($it['excerpt']) . '</p>';
+            }
+            $o .= '</a></li>';
+        }
+        return $o . '</ul></div>';
+    }
+
+    public const KINDS = [
+        'bg' => ['post' => 'Новина', 'product' => 'Продукт', 'service' => 'Услуга', 'category' => 'Категория', 'page' => 'Страница'],
+        'en' => ['post' => 'News', 'product' => 'Product', 'service' => 'Service', 'category' => 'Category', 'page' => 'Page'],
+    ];
+
     private static function block(array $b, bool $isH1): string
     {
         $t = $b['type'];
@@ -213,6 +239,7 @@ final class Render
             'cta' => '<div class="cta-box">' . self::heading($b) . ($b['text'] ? '<p>' . e($b['text']) . '</p>' : '')
                 . ($b['label'] ? '<a class="btn btn-primary" href="' . e($b['url']) . '">' . e($b['label']) . '</a>' : '') . '</div>',
             'listing' => self::heading($b) . self::cards(((array)self::$p['listings'])[$b['id']] ?? []),
+            'carousel' => self::carousel($b, ((array)self::$p['listings'])[$b['id']] ?? []),
             'testimonials' => self::heading($b) . '<div class="quotes">' . implode('', array_map(
                 fn($it) => '<figure><blockquote><p>' . e($it['quote']) . '</p></blockquote><figcaption>' . e($it['author']) . ($it['company'] ? ', ' . e($it['company']) : '') . '</figcaption></figure>',
                 $b['items']

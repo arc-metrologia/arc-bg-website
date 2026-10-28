@@ -32,7 +32,7 @@ final class Markdown
                     $b['rows']
                 )) . "\n",
                 'cta' => $h . ($b['text'] ? $b['text'] . "\n\n" : '') . ($b['label'] ? '[' . $b['label'] . '](' . self::abs($b['url']) . ")\n\n" : ''),
-                'listing' => $h . implode('', array_map(
+                'listing', 'carousel' => $h . implode('', array_map(
                     fn($c) => '- [' . $c['title'] . '](' . $base . $c['url'] . ')' . ($c['excerpt'] ? ': ' . $c['excerpt'] : '') . "\n",
                     ((array)$payload['listings'])[$b['id']] ?? []
                 )) . "\n",

@@ -35,6 +35,7 @@ export type Block = Base &
     | { type: 'specs'; rows: { label: string; value: string }[] }
     | { type: 'cta'; text: string; label: string; url: string }
     | { type: 'listing'; source: 'children' | 'posts' | 'products' | 'services'; limit: number }
+    | { type: 'carousel'; source: 'latest' | 'posts' | 'products' | 'manual'; pages: number[]; limit: number }
     | { type: 'testimonials'; items: { quote: string; author: string; company: string }[] }
     | { type: 'contact'; text: string }
   )
