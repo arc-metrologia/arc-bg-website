@@ -39,6 +39,12 @@ switch ($cmd) {
         seed();
         break;
 
+    case 'seed-news':
+        // Добавя пренесената новина от стария сайт към вече попълнена база.
+        require __DIR__ . '/database/seed.php';
+        seed_grant_news();
+        break;
+
     default:
         echo "Използване: php app/cli.php init|seed|user\n";
         exit(1);

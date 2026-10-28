@@ -84,8 +84,17 @@ final class Content
         if ($block['type'] === 'carousel' && ($block['source'] ?? '') === 'manual') {
             return self::cardsByIds($block['pages'] ?? []);
         }
+        if (($block['source'] ?? '') === 'latest') {
+            // Новини и продукти се редуват, за да не изместят продуктите новините (или обратно).
+            $posts = Db::all("SELECT * FROM pages WHERE lang = ? AND type = 'post' AND status = 'published' ORDER BY published_at DESC$lim", [$lang]);
+            $products = Db::all("SELECT * FROM pages WHERE lang = ? AND type = 'product' AND status = 'published' ORDER BY sort_order, title$lim", [$lang]);
+            $mixed = [];
+            for ($i = 0; $i < max(count($posts), count($products)); $i++) {
+                array_push($mixed, ...array_filter([$posts[$i] ?? null, $products[$i] ?? null]));
+            }
+            return array_map([self::class, 'card'], $limit > 0 ? array_slice($mixed, 0, $limit) : $mixed);
+        }
         $rows = match ($block['source'] ?? 'children') {
-            'latest' => Db::all("SELECT * FROM pages WHERE lang = ? AND type IN ('post', 'product') AND status = 'published' ORDER BY published_at DESC, sort_order$lim", [$lang]),
             'posts' => Db::all("SELECT * FROM pages WHERE lang = ? AND type = 'post' AND status = 'published' ORDER BY published_at DESC$lim", [$lang]),
             'products' => Db::all("SELECT * FROM pages WHERE lang = ? AND type = 'product' AND status = 'published' ORDER BY sort_order, title$lim", [$lang]),
             'services' => Db::all("SELECT * FROM pages WHERE lang = ? AND type = 'service' AND status = 'published' ORDER BY sort_order, title$lim", [$lang]),

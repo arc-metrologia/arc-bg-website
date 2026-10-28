@@ -760,19 +760,29 @@ p {
   cursor: default;
 }
 
+/* Десктоп: лентата е в колоната на съдържанието и вдясно се подава част от следващата карта. */
 .carousel-track {
   list-style: none;
-  margin: 24px calc(var(--gutter) * -1) 0;
-  padding: 0 var(--gutter) 8px;
+  margin: 24px 0 0;
+  padding: 0 0 8px;
   display: grid;
   grid-auto-flow: column;
-  grid-auto-columns: min(360px, 80vw);
+  grid-auto-columns: calc((100% - 3 * 20px) / 3.25);
   column-gap: 20px;
   overflow-x: auto;
   scroll-snap-type: x mandatory;
-  scroll-padding-inline: var(--gutter);
   overscroll-behavior-x: contain;
   scrollbar-width: none;
+}
+
+/* Телефон и таблет: лентата стига до ръба на екрана, за да личи, че се превърта. */
+@media (max-width: 860px) {
+  .carousel-track {
+    margin-inline: calc(var(--gutter) * -1);
+    padding-inline: var(--gutter);
+    scroll-padding-inline: var(--gutter);
+    grid-auto-columns: min(320px, 80vw);
+  }
 }
 
 .carousel-track::-webkit-scrollbar {

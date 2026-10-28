@@ -16,6 +16,8 @@ DEST="/home/$SSH_USER/$PREVIEW_HOST/public"
 SSH=(ssh -o BatchMode=yes -o LogLevel=ERROR -i "$SSH_KEY" -p "$SSH_PORT" "$SSH_USER@$SSH_HOST")
 
 cd "$ROOT"
+# В hook git задава GIT_DIR/GIT_INDEX_FILE, които объркват git worktree
+unset GIT_DIR GIT_INDEX_FILE GIT_WORK_TREE
 # Качва се точно commit-натото: при некомитнати промени билдът е от чисто копие на HEAD
 SRC="$ROOT"
 if [ -n "$(git status --porcelain)" ]; then
