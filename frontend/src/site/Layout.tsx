@@ -8,7 +8,12 @@ export default function Layout({ site, alternates, children }: { site: Site; alt
   const info = site.info
   const [open, setOpen] = useState(false)
   const { pathname } = useLocation()
-  useEffect(() => setOpen(false), [pathname])
+  useEffect(() => {
+    setOpen(false)
+    // Подменютата се отварят с :focus-within; при навигация без презареждане фокусът остава на линка.
+    const el = document.activeElement
+    if (el instanceof HTMLElement && el.closest('#main-nav')) el.blur()
+  }, [pathname])
   const otherLang: Lang = site.lang === 'bg' ? 'en' : 'bg'
   const otherUrl = alternates[otherLang] ?? (otherLang === 'en' ? '/en/' : '/')
   const tel = info.phone?.replace(/[^\d+]/g, '')
