@@ -1,0 +1,99 @@
+-- SQLite схема за локална разработка (генерирана от schema.mysql.sql)
+
+CREATE TABLE users (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  email VARCHAR(190) NOT NULL UNIQUE,
+  name VARCHAR(100) NOT NULL,
+  role VARCHAR(20) NOT NULL DEFAULT 'editor',
+  password_hash VARCHAR(255) NOT NULL,
+  totp_secret VARCHAR(255) NULL,
+  totp_enabled INTEGER NOT NULL DEFAULT 0,
+  totp_last_step BIGINT NOT NULL DEFAULT 0,
+  recovery_codes TEXT NULL,
+  active INTEGER NOT NULL DEFAULT 1,
+  created_at DATETIME NOT NULL,
+  last_login_at DATETIME NULL
+);
+
+CREATE TABLE login_attempts (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  ip VARCHAR(45) NOT NULL,
+  email VARCHAR(190) NOT NULL,
+  success INTEGER NOT NULL,
+  created_at DATETIME NOT NULL
+);
+
+CREATE TABLE media (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  kind VARCHAR(10) NOT NULL,
+  path VARCHAR(255) NOT NULL,
+  mime VARCHAR(100) NOT NULL,
+  original_name VARCHAR(255) NOT NULL DEFAULT '',
+  title VARCHAR(255) NOT NULL DEFAULT '',
+  alt_bg VARCHAR(300) NOT NULL DEFAULT '',
+  alt_en VARCHAR(300) NOT NULL DEFAULT '',
+  width INT NULL,
+  height INT NULL,
+  size BIGINT NOT NULL DEFAULT 0,
+  variants TEXT NOT NULL,
+  created_at DATETIME NOT NULL,
+  uploaded_by INT NULL
+);
+
+CREATE TABLE pages (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  type VARCHAR(20) NOT NULL DEFAULT 'page',
+  lang VARCHAR(5) NOT NULL,
+  path VARCHAR(255) NOT NULL,
+  translation_key VARCHAR(100) NULL,
+  title VARCHAR(255) NOT NULL,
+  meta_title VARCHAR(200) NOT NULL DEFAULT '',
+  meta_description VARCHAR(400) NOT NULL DEFAULT '',
+  excerpt TEXT NULL,
+  image_id INT NULL,
+  blocks TEXT NOT NULL,
+  related TEXT NULL,
+  extra TEXT NULL,
+  status VARCHAR(10) NOT NULL DEFAULT 'draft',
+  sort_order INT NOT NULL DEFAULT 0,
+  author_id INT NULL,
+  published_at DATETIME NULL,
+  created_at DATETIME NOT NULL,
+  updated_at DATETIME NOT NULL,
+  updated_by INT NULL,
+  UNIQUE (lang, path)
+);
+
+CREATE TABLE revisions (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  page_id INT NOT NULL,
+  data TEXT NOT NULL,
+  user_id INT NULL,
+  created_at DATETIME NOT NULL
+);
+
+CREATE TABLE settings (
+  k VARCHAR(50) PRIMARY KEY,
+  v TEXT NOT NULL
+);
+
+CREATE TABLE messages (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name VARCHAR(120) NOT NULL,
+  email VARCHAR(200) NOT NULL,
+  phone VARCHAR(50) NOT NULL DEFAULT '',
+  company VARCHAR(200) NOT NULL DEFAULT '',
+  body TEXT NOT NULL,
+  page VARCHAR(300) NOT NULL DEFAULT '',
+  ip VARCHAR(45) NOT NULL,
+  created_at DATETIME NOT NULL
+);
+
+CREATE TABLE audit_log (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INT NULL,
+  action VARCHAR(60) NOT NULL,
+  target VARCHAR(255) NOT NULL DEFAULT '',
+  ip VARCHAR(45) NOT NULL,
+  created_at DATETIME NOT NULL
+);

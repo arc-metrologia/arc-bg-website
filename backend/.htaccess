@@ -1,0 +1,41 @@
+Options -Indexes
+DirectoryIndex index.php
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # HTTPS и www
+    RewriteCond %{HTTPS} off
+    RewriteCond %{HTTP_HOST} !^localhost
+    RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+    RewriteCond %{HTTP_HOST} ^arc-bg\.com$ [NC]
+    RewriteRule ^ https://www.arc-bg.com%{REQUEST_URI} [L,R=301]
+
+    # Вътрешните PHP файлове не са достъпни отвън
+    RewriteRule ^app(/|$) - [F,L]
+    RewriteRule ^build/index\.html$ - [F,L]
+
+    # Съществуващи файлове се отдават директно, всичко друго минава през index.php
+    RewriteCond %{REQUEST_FILENAME} -f
+    RewriteRule ^ - [L]
+    RewriteRule ^ index.php [L,QSA]
+</IfModule>
+
+# Дълъг кеш за хеширани ресурси и качени файлове
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresByType image/webp "access plus 1 year"
+    ExpiresByType image/jpeg "access plus 1 year"
+    ExpiresByType image/png "access plus 1 year"
+    ExpiresByType video/mp4 "access plus 1 year"
+    ExpiresByType font/woff2 "access plus 1 year"
+    ExpiresByType text/css "access plus 1 year"
+    ExpiresByType application/javascript "access plus 1 year"
+</IfModule>
+
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html text/css text/plain text/markdown application/javascript application/json application/xml image/svg+xml
+</IfModule>
+
+AddType text/markdown .md
+AddType font/woff2 .woff2

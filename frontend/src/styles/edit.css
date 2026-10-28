@@ -1,0 +1,786 @@
+/* Режим на редакция върху страницата. Зарежда се само за влезли редактори. */
+:root {
+  --ed: #f0b323;
+  --ed-ink: #1b2a33;
+  --ed-ui: #0f1d26;
+}
+
+body.editing {
+  padding-bottom: 72px;
+}
+
+.ed-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 90;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: var(--ed-ui);
+  color: #fff;
+  font: 500 0.9rem/1.2 var(--text);
+  box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.25);
+}
+
+.ed-bar button,
+.ed-bar a {
+  font: inherit;
+  color: #fff;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 3px;
+  padding: 8px 12px;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.ed-bar button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.ed-bar button.on {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.ed-bar button.primary {
+  background: #fff;
+  color: var(--ed-ui);
+  border-color: #fff;
+}
+
+.ed-bar button.accent {
+  background: var(--ed);
+  color: #3b2c00;
+  border-color: var(--ed);
+}
+
+.ed-spacer {
+  flex: 1;
+}
+
+.ed-status {
+  padding: 4px 8px;
+  border-radius: 3px;
+  font-size: 0.8rem;
+  font-weight: 650;
+}
+
+.ed-status.published {
+  background: #1d7a4a;
+}
+
+.ed-status.draft {
+  background: #8a5a00;
+}
+
+.ed-dirty {
+  color: var(--ed);
+}
+
+.ed-msg {
+  color: #9ee2bb;
+}
+
+.ed-msg.err {
+  color: #ffb4a8;
+}
+
+/* Редактируеми полета */
+.editing .ed-text {
+  outline: 1px dashed rgba(240, 179, 35, 0.7);
+  outline-offset: 3px;
+  min-width: 2ch;
+  cursor: text;
+}
+
+.editing .ed-text:focus {
+  outline: 2px solid var(--ed);
+}
+
+.editing .ed-text:empty::before {
+  content: attr(data-placeholder);
+  color: #8a99a3;
+  font-weight: 400;
+}
+
+.editing .blk-hero .ed-text:empty::before {
+  color: #7fa2b6;
+}
+
+.ed-frame {
+  position: relative;
+  outline: 1px solid transparent;
+}
+
+.ed-frame:hover {
+  outline-color: rgba(240, 179, 35, 0.6);
+}
+
+.ed-frame-bar {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 5;
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  padding: 4px;
+  background: var(--ed-ui);
+  color: #fff;
+  font: 500 0.8rem var(--text);
+  border-radius: 3px;
+}
+
+.ed-frame-bar span {
+  padding: 0 6px;
+}
+
+.ed-frame-bar button,
+.ed-frame-bar select {
+  font: inherit;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  border: 0;
+  border-radius: 2px;
+  padding: 4px 8px;
+  cursor: pointer;
+}
+
+.ed-frame-bar select option {
+  color: #000;
+}
+
+.ed-insert {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  padding: 4px 0;
+}
+
+.ed-insert > button {
+  font: 600 0.85rem var(--text);
+  color: #6a5000;
+  background: #fff8e4;
+  border: 1px dashed var(--ed);
+  border-radius: 3px;
+  padding: 6px 14px;
+  cursor: pointer;
+}
+
+.ed-insert-menu {
+  position: absolute;
+  top: 100%;
+  z-index: 60;
+  width: min(560px, calc(100vw - 32px));
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px;
+  list-style: none;
+  margin: 0;
+  padding: 6px;
+  background: #fff;
+  border: 1px solid var(--rule);
+  box-shadow: 0 10px 30px rgba(5, 58, 89, 0.18);
+}
+
+.ed-insert-menu button {
+  display: grid;
+  width: 100%;
+  text-align: left;
+  gap: 2px;
+  padding: 10px;
+  font: inherit;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+.ed-insert-menu button:hover {
+  background: var(--plate);
+}
+
+.ed-insert-menu span {
+  font-size: 0.8rem;
+  color: var(--steel);
+}
+
+.ed-chip,
+.ed-add-item {
+  font: 600 0.85rem var(--text);
+  background: var(--ed-ui);
+  color: #fff;
+  border: 0;
+  border-radius: 3px;
+  padding: 7px 12px;
+  cursor: pointer;
+}
+
+.ed-add-item {
+  margin-top: 16px;
+  background: #fff8e4;
+  color: #6a5000;
+  border: 1px dashed var(--ed);
+}
+
+.ed-slot {
+  position: relative;
+}
+
+.ed-slot .ed-chip {
+  position: absolute;
+  left: 10px;
+  bottom: 10px;
+}
+
+.ed-slot-empty {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 4 / 3;
+  background: repeating-linear-gradient(45deg, #f4f6f8 0 12px, #e9eef1 12px 24px);
+  color: var(--steel);
+}
+
+.ed-item-tools {
+  display: inline-flex;
+  gap: 2px;
+  margin-left: 8px;
+  vertical-align: middle;
+}
+
+.ed-item-tools button {
+  font-size: 0.75rem;
+  border: 1px solid var(--rule);
+  background: #fff;
+  border-radius: 2px;
+  padding: 1px 6px;
+  cursor: pointer;
+}
+
+.gallery li,
+.logos li {
+  position: relative;
+}
+
+.gallery .ed-item-tools,
+.logos .ed-item-tools {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+}
+
+.ed-url,
+.ed-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-top: 12px;
+  font: 500 0.8rem var(--text);
+}
+
+.ed-url input {
+  font: inherit;
+  padding: 6px 8px;
+  min-width: 260px;
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+}
+
+.blk-hero .ed-url {
+  color: #c9dbe5;
+}
+
+.ed-hint {
+  font-size: 0.85rem;
+  color: #6a5000;
+  background: #fff8e4;
+  padding: 8px 12px;
+  border-left: 3px solid var(--ed);
+}
+
+/* Rich text */
+.ed-rich {
+  border: 1px solid var(--ed);
+  border-radius: 3px;
+  max-width: 76ch;
+}
+
+.ed-rich-bar {
+  position: sticky;
+  top: 76px;
+  z-index: 4;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  padding: 6px;
+  background: #fff8e4;
+  border-bottom: 1px solid var(--ed);
+}
+
+.ed-rich-bar button {
+  font: 600 0.8rem var(--text);
+  padding: 5px 8px;
+  background: #fff;
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  cursor: pointer;
+}
+
+.ed-rich-bar button.on {
+  background: var(--petrol);
+  color: #fff;
+  border-color: var(--petrol);
+}
+
+.ed-rich-body .ProseMirror {
+  padding: 12px 16px;
+  outline: none;
+  min-height: 120px;
+}
+
+.ed-rich-body .ProseMirror table {
+  display: table;
+}
+
+.ed-rich-body .selectedCell {
+  background: var(--petrol-soft);
+}
+
+/* Модални прозорци и панели */
+.ed-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(3, 22, 34, 0.55);
+  display: grid;
+  place-items: center;
+  padding: 16px;
+}
+
+.ed-modal-box {
+  width: min(1100px, 100%);
+  max-height: calc(100vh - 32px);
+  overflow: auto;
+  background: #fff;
+  border-radius: 4px;
+  padding: 20px;
+}
+
+.ed-modal-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.ed-modal-head h2 {
+  margin: 0;
+  font-size: 1.2rem;
+}
+
+.ed-modal-head button {
+  font-size: 1.1rem;
+  background: none;
+  border: 0;
+  cursor: pointer;
+  padding: 6px 10px;
+}
+
+.ed-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 60px;
+  z-index: 95;
+  width: min(440px, 100vw);
+  overflow-y: auto;
+  background: #fff;
+  border-left: 1px solid var(--rule);
+  box-shadow: -8px 0 24px rgba(5, 58, 89, 0.12);
+  padding: 20px;
+  font-size: 0.95rem;
+}
+
+.ed-settings label,
+.ed-field {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 18px;
+  font-weight: 600;
+}
+
+.ed-settings input,
+.ed-settings textarea {
+  font: 400 0.95rem var(--text);
+  padding: 8px 10px;
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  width: 100%;
+}
+
+.ed-settings small {
+  font-weight: 400;
+  color: var(--steel);
+}
+
+.ed-settings fieldset {
+  border: 1px solid var(--rule);
+  padding: 14px;
+  margin: 0 0 18px;
+}
+
+.ed-settings legend {
+  font-weight: 650;
+  padding: 0 6px;
+}
+
+.ed-path {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.ed-path span {
+  color: var(--steel);
+}
+
+.ed-link {
+  justify-self: start;
+  background: none;
+  border: 0;
+  color: var(--petrol);
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 0;
+  font: 400 0.85rem var(--text);
+}
+
+.ed-count {
+  font-weight: 400;
+  font-size: 0.8rem;
+  margin-left: 6px;
+}
+
+.ed-count.ok {
+  color: #1d7a4a;
+}
+
+.ed-count.empty {
+  color: var(--steel);
+}
+
+.ed-count.long {
+  color: #b42318;
+}
+
+.ed-count.short {
+  color: #8a5a00;
+}
+
+.serp {
+  display: grid;
+  gap: 2px;
+  padding: 12px;
+  margin-bottom: 14px;
+  background: #fafbfc;
+  border: 1px solid #eceff1;
+  font-family: Arial, sans-serif;
+}
+
+.serp-url {
+  font-size: 0.8rem;
+  color: #4d5156;
+}
+
+.serp-title {
+  font-size: 1.15rem;
+  color: #1a0dab;
+}
+
+.serp-desc {
+  font-size: 0.85rem;
+  color: #4d5156;
+}
+
+.ed-thumb {
+  max-width: 180px;
+  border: 1px solid var(--rule);
+}
+
+.ed-related,
+.ed-suggest,
+.ed-revs {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-weight: 400;
+}
+
+.ed-related li,
+.ed-revs li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+  border-bottom: 1px solid #eef1f3;
+}
+
+.ed-related button,
+.ed-revs button {
+  font: inherit;
+  font-size: 0.85rem;
+  background: #fff;
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  padding: 4px 8px;
+  cursor: pointer;
+}
+
+.ed-suggest button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  background: none;
+  border: 0;
+  padding: 8px;
+  cursor: pointer;
+}
+
+.ed-suggest button:hover {
+  background: var(--plate);
+}
+
+.ed-suggest small {
+  display: block;
+  color: var(--steel);
+}
+
+/* Медийна библиотека (използва се и в админ панела) */
+.ml {
+  font-family: var(--text);
+  position: relative;
+}
+
+.ml.drag::after {
+  content: 'Пуснете файловете за качване';
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(255, 248, 228, 0.92);
+  border: 2px dashed var(--ed);
+  font-weight: 650;
+  z-index: 5;
+}
+
+.ml-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.ml-bar input[type='search'],
+.ml-bar select {
+  font: inherit;
+  padding: 7px 10px;
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+}
+
+.ml-drop-hint {
+  color: var(--steel);
+  font-size: 0.85rem;
+  flex: 1;
+}
+
+.ml-warn {
+  font-size: 0.85rem;
+  color: #6a5000;
+  background: #fff8e4;
+  padding: 8px 12px;
+}
+
+.ml-queue {
+  font-size: 0.85rem;
+  list-style: none;
+  padding: 0;
+}
+
+.ml-queue .err {
+  color: #b42318;
+}
+
+.ml-body {
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  gap: 16px;
+}
+
+.ml-body:has(> :only-child) {
+  grid-template-columns: 1fr;
+}
+
+.ml-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 10px;
+  align-content: start;
+}
+
+.ml-grid button {
+  position: relative;
+  display: grid;
+  width: 100%;
+  padding: 0;
+  background: #fff;
+  border: 2px solid transparent;
+  outline: 1px solid var(--rule);
+  border-radius: 3px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.ml-grid img,
+.ml-file {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: contain;
+  background: var(--plate);
+}
+
+.ml-file {
+  display: grid;
+  place-items: center;
+  font-weight: 650;
+  color: var(--petrol);
+}
+
+.ml-name {
+  font-size: 0.75rem;
+  padding: 4px 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ml-flag {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  font-size: 0.7rem;
+  background: #fff8e4;
+  color: #6a5000;
+  padding: 1px 5px;
+}
+
+.ml-grid .sel button {
+  border-color: var(--petrol);
+}
+
+.ml-grid .act button {
+  outline-color: var(--ed);
+}
+
+.ml-empty {
+  color: var(--steel);
+  grid-column: 1 / -1;
+}
+
+.ml-side {
+  display: grid;
+  gap: 10px;
+  align-content: start;
+  font-size: 0.9rem;
+}
+
+.ml-side img {
+  max-height: 200px;
+  object-fit: contain;
+  background: var(--plate);
+}
+
+.ml-side label {
+  display: grid;
+  gap: 4px;
+  font-weight: 600;
+}
+
+.ml-side input,
+.ml-side textarea {
+  font: 400 0.9rem var(--text);
+  padding: 7px 9px;
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+}
+
+.ml-meta {
+  color: var(--steel);
+  margin: 0;
+}
+
+.ml-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.ml-foot {
+  position: sticky;
+  bottom: -20px;
+  margin: 16px -20px -20px;
+  padding: 12px 20px;
+  background: #fff;
+  border-top: 1px solid var(--rule);
+  text-align: right;
+}
+
+@media (max-width: 760px) {
+  .ml-body {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Бутоните на библиотеката са общи с админ панела */
+.adm-btn {
+  display: inline-block;
+  font: 600 0.875rem var(--text);
+  padding: 8px 14px;
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  background: #fff;
+  color: var(--ink);
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.adm-btn.primary {
+  background: var(--petrol);
+  border-color: var(--petrol);
+  color: #fff;
+}
+
+.adm-btn.danger {
+  color: #b42318;
+}
+
+.adm-btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.adm-btn.small {
+  padding: 5px 10px;
+  font-size: 0.8rem;
+}

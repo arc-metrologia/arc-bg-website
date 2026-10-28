@@ -1,0 +1,9 @@
+# Качените файлове никога не се изпълняват като код
+<FilesMatch "\.(php|phtml|php\d|phar|pl|py|cgi|sh|html?|svg|js)$">
+    Require all denied
+</FilesMatch>
+<IfModule mod_php.c>
+    php_flag engine off
+</IfModule>
+Options -Indexes -ExecCGI
+Header set X-Content-Type-Options "nosniff"

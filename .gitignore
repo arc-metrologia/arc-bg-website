@@ -1,0 +1,21 @@
+# Тайни — никога в git
+backend/app/config.php
+arc-config.php
+.env*
+
+# Локални данни и качени файлове
+data/
+backend/uploads/*
+!backend/uploads/.htaccess
+
+# Билд и зависимости
+backend/build/
+node_modules/
+frontend/dist/
+
+# OS / редактори
+.DS_Store
+Thumbs.db
+*.log
+.vscode/
+.idea/
