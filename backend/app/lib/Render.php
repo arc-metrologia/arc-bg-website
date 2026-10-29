@@ -103,6 +103,8 @@ final class Render
             }
             $out .= '</ol></nav>';
         }
+        // „Празна секция“ е бележка за редакторите — посетителите не я виждат.
+        $blocks = array_values(array_filter($blocks, fn($b) => $b['type'] !== 'placeholder'));
         $heroFirst = ($blocks[0]['type'] ?? '') === 'hero';
         if (!$heroFirst) {
             // Продукти, услуги и статии показват основната си снимка до заглавието.
@@ -130,6 +132,30 @@ final class Render
             $out .= '<section class="blk blk-listing related"><div class="wrap"><h2>' . e(self::t('related')) . '</h2>' . self::cards(self::$p['related']) . '</div></section>';
         }
         return $out;
+    }
+
+    /** Цветове от Админ → Външен вид. Само познати променливи и #rrggbb, защото отиват в <style>. */
+    public const THEME_VARS = ['petrol', 'petrol-deep', 'petrol-soft', 'ink', 'steel', 'rule', 'plate', 'paper', 'amber', 'amber-ink'];
+
+    public static function theme(mixed $in): array
+    {
+        $out = [];
+        foreach (self::THEME_VARS as $k) {
+            $v = is_array($in) ? strtolower((string)($in[$k] ?? '')) : '';
+            if (preg_match('/^#[0-9a-f]{6}$/', $v)) {
+                $out[$k] = $v;
+            }
+        }
+        return $out;
+    }
+
+    public static function themeStyle(): string
+    {
+        $t = self::theme(Db::setting('theme', []));
+        if (!$t) {
+            return '';
+        }
+        return '<style id="theme">html:root{' . implode('', array_map(fn($k, $v) => "--$k:$v;", array_keys($t), $t)) . '}</style>';
     }
 
     private static function media(?int $id): ?array

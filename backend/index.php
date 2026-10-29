@@ -117,7 +117,7 @@ try {
         ['<html lang="bg">', '<!--head-->', '<!--app-->', '<!--data-->'],
         [
             '<html lang="' . e($lang) . '">',
-            Seo::head($payload, $site),
+            Seo::head($payload, $site) . Render::themeStyle(),
             Render::body($payload, $site),
             '<script id="__DATA__" type="application/json">' . Seo::json($data) . '</script>',
         ],

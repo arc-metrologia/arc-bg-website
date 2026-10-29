@@ -1,4 +1,4 @@
-import type { Block, BlockType } from '../types'
+import type { Block, BlockType, PageType } from '../types'
 
 const id = () => Math.random().toString(36).slice(2, 10)
 
@@ -19,6 +19,7 @@ export const BLOCKS: { type: BlockType; label: string; hint: string; make(): Blo
   { type: 'logos', label: 'Логота', hint: 'Партньори или клиенти', make: () => ({ id: id(), type: 'logos', heading: '', images: [] }) },
   { type: 'cta', label: 'Призив за действие', hint: 'Заглавие, текст и бутон', make: () => ({ id: id(), type: 'cta', heading: '', text: '', label: 'Свържете се с нас', url: '/kontakti' }) },
   { type: 'contact', label: 'Контакти и форма', hint: 'Данните на фирмата и форма за запитване', make: () => ({ id: id(), type: 'contact', heading: '', text: '' }) },
+  { type: 'placeholder', label: 'Празна секция', hint: 'Запазва място за съдържание по-късно; посетителите не я виждат', make: () => ({ id: id(), type: 'placeholder', heading: '', note: '' }) },
 ]
 
 export const blockLabel = (t: BlockType) => BLOCKS.find((b) => b.type === t)?.label ?? t
@@ -44,3 +45,40 @@ export const TYPE_LABELS = {
   service: 'Услуга',
   post: 'Статия',
 } as const
+
+const make = <T extends BlockType>(type: T, patch: Partial<Extract<Block, { type: T }>> = {}) => ({ ...BLOCKS.find((b) => b.type === type)!.make(), ...patch }) as Block
+
+/** Готови структури за нова страница. Секциите са празни и се попълват в редактора. */
+export const TEMPLATES: { key: string; label: string; hint: string; type: PageType; blocks(): Block[] }[] = [
+  { key: 'blank', label: 'Празна страница', hint: 'Само текстов блок', type: 'page', blocks: () => [make('richtext')] },
+  {
+    key: 'landing',
+    label: 'Водеща страница',
+    hint: 'Голяма снимка, предимства, слайдер, логота и призив',
+    type: 'page',
+    blocks: () => [make('hero'), make('features'), make('carousel'), make('logos', { heading: 'Партньори' }), make('cta')],
+  },
+  {
+    key: 'category',
+    label: 'Категория',
+    hint: 'Въведение и автоматичен списък на подстраниците',
+    type: 'category',
+    blocks: () => [make('richtext'), make('listing', { source: 'children' }), make('cta')],
+  },
+  {
+    key: 'product',
+    label: 'Продукт',
+    hint: 'Описание, галерия, технически данни, видео, каталози, въпроси',
+    type: 'product',
+    blocks: () => [make('richtext'), make('gallery'), make('specs'), make('video'), make('downloads'), make('faq'), make('cta')],
+  },
+  {
+    key: 'service',
+    label: 'Услуга',
+    hint: 'Описание, стъпки на процеса, въпроси и призив',
+    type: 'service',
+    blocks: () => [make('richtext'), make('steps', { heading: 'Как работим' }), make('faq'), make('cta')],
+  },
+  { key: 'post', label: 'Статия / новина', hint: 'Текст и снимка', type: 'post', blocks: () => [make('richtext'), make('image')] },
+  { key: 'contact', label: 'Контакти', hint: 'Текст, данни на фирмата и форма', type: 'page', blocks: () => [make('richtext'), make('contact')] },
+]

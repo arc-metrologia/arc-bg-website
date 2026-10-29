@@ -75,7 +75,8 @@ final class Http
             "img-src 'self' data: https://i.ytimg.com https://i.vimeocdn.com",
             "media-src 'self'",
             "font-src 'self'",
-            "frame-src https://www.youtube-nocookie.com https://player.vimeo.com" . ($isAdmin ? self::comparatorOrigin() : ''),
+            // Админът вгражда страниците на сайта за визуалния редактор и прегледа на цветовете.
+            "frame-src https://www.youtube-nocookie.com https://player.vimeo.com" . ($isAdmin ? " 'self'" . self::comparatorOrigin() : ''),
             "connect-src 'self'",
             "object-src 'none'",
             "base-uri 'self'",

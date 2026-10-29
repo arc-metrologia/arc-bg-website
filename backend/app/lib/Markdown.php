@@ -48,6 +48,7 @@ final class Markdown
                     $b['files']
                 )) . "\n",
                 'contact' => $h . self::contactInfo($payload['page']['lang']),
+                'placeholder' => '', // само за редакторите
                 default => '',
             };
         }

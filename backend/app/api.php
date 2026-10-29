@@ -190,10 +190,10 @@ function api(string $method, string $route): never
         Auth::require('settings');
         Http::json(Db::setting($m[1], null));
     }
-    if ($is('PUT', 'admin/settings/(site|nav_bg|nav_en|redirects)')) {
+    if ($is('PUT', 'admin/settings/(site|nav_bg|nav_en|redirects|theme)')) {
         Auth::require('settings');
         $value = Http::body();
-        Db::saveSetting($m[1], sanitize_setting($value));
+        Db::saveSetting($m[1], $m[1] === 'theme' ? Render::theme($value) : sanitize_setting($value));
         Db::audit($user['id'], 'settings.update', $m[1]);
         Http::json(Db::setting($m[1]));
     }

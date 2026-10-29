@@ -178,7 +178,7 @@ final class Seo
                 'name' => $p['title'],
                 'description' => self::description($p),
                 'image' => $img ? $base . $img['url'] : null,
-                'brand' => !empty($p['extra']['brand']) ? ['@type' => 'Brand', 'name' => $p['extra']['brand']] : null,
+                'brand' => !empty(((array)$p['extra'])['brand']) ? ['@type' => 'Brand', 'name' => ((array)$p['extra'])['brand']] : null,
                 'category' => $payload['breadcrumbs'][count($payload['breadcrumbs']) - 2]['title'] ?? null,
                 'additionalProperty' => self::specs($p['blocks']),
                 'url' => $url,

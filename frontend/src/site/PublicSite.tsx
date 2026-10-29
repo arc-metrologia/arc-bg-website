@@ -42,14 +42,16 @@ export function PageBody({ payload }: { payload: Payload }) {
         </div>
       </header>
     )
-  const heroFirst = page.blocks[0]?.type === 'hero'
+  // „Празна секция“ е бележка за редакторите — посетителите не я виждат.
+  const firstIdx = page.blocks.findIndex((b) => editing || b.type !== 'placeholder')
+  const heroFirst = page.blocks[firstIdx]?.type === 'hero'
   // Продукти, услуги и статии показват основната си снимка до заглавието.
   const headImage = !heroFirst && page.type !== 'page' && page.type !== 'category' && page.image ? payload.media[page.image] : undefined
-  const blocks = page.blocks.map((b, i) => (
+  const blocks = page.blocks.map((b, i) => (b.type === 'placeholder' && !editing ? null :
     <Frame key={b.id} block={b} index={i}>
       <section className={`blk blk-${b.type}`}>
         <div className="wrap">
-          <BlockView block={b} payload={payload} first={i === 0 && heroFirst} set={(patch) => setBlock(b.id, patch)} />
+          <BlockView block={b} payload={payload} first={i === firstIdx && heroFirst} set={(patch) => setBlock(b.id, patch)} />
         </div>
       </section>
     </Frame>

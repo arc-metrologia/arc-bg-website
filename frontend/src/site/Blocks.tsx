@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { api } from '../api'
 import { t } from '../i18n'
 import type { Block, BlockOf, BlockType, Card, Media, Payload } from '../types'
@@ -6,6 +6,7 @@ import { useEdit } from './edit-context'
 import { AddItem, ImageSlot, ItemTools, Rich, Text } from './editable'
 import Carousel from './Carousel'
 import Img from './Img'
+import PageLinkInput from '../edit/PageLinkInput'
 
 interface P<T extends BlockType> {
   block: BlockOf<T>
@@ -47,12 +48,14 @@ function Hero({ block, payload, set, first }: P<'hero'>) {
   )
 }
 
-/** Поле за адрес на връзка — показва се само в режим на редакция. */
+/** Поле за адрес на връзка — показва се само в режим на редакция. Подсказва страниците на сайта. */
 export function UrlField({ value, onChange }: { value: string; onChange(v: string): void }) {
+  const [v, setV] = useState(value)
+  useEffect(() => setV(value), [value])
   return (
     <label className="ed-url">
       Връзка
-      <input defaultValue={value} placeholder="/kontakti или https://…" onBlur={(e) => e.target.value !== value && onChange(e.target.value.trim())} />
+      <PageLinkInput value={v} onChange={setV} placeholder="Име на страница, /kontakti или https://…" onBlur={() => v.trim() !== value && onChange(v.trim())} />
     </label>
   )
 }
@@ -439,6 +442,13 @@ export function BlockView({ block, payload, set, first }: { block: Block; payloa
         </>
       )
     }
+    case 'placeholder':
+      return editing ? (
+        <div className="placeholder-box">
+          <Text as="strong" value={block.heading} onChange={(heading) => set({ heading })} placeholder="Какво ще има тук (напр. „Видео от демонстрацията“)" />
+          <Text as="p" value={block.note} onChange={(note) => set({ note } as Partial<Block>)} placeholder="Бележка за колегите — не се показва на сайта" multiline />
+        </div>
+      ) : null
     case 'contact':
       return (
         <div className="contact-grid">

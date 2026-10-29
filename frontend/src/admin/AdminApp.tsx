@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react'
-import { NavLink, Navigate, Route, Routes } from 'react-router-dom'
+import { NavLink, Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import QRCode from 'qrcode'
 import { api, me as fetchMe } from '../api'
 import type { Me } from '../types'
 import MediaLibrary from '../edit/MediaLibrary'
 import { Account, Audit, Comparator, ContentList, Messages, Settings, Users } from './pages'
+import PageEditor from './PageEditor'
+import Appearance from './Appearance'
 import '../styles/admin.css'
 
 export default function AdminApp() {
@@ -241,11 +243,14 @@ const ROLE_LABEL = { admin: 'Администратор', editor: 'Редакт�
 function Shell({ me }: { me: Me }) {
   const u = me.user!
   const can = (p: string) => u.permissions.includes(p)
+  const full = useLocation().pathname.startsWith('/admin/pages')
   const links = [
-    { to: 'content', label: 'Съдържание', show: can('posts') },
+    { to: 'pages', label: 'Страници', show: can('posts') },
+    { to: 'content', label: 'Списък на съдържанието', show: can('posts') },
     { to: 'media', label: 'Медия', show: can('media') },
     { to: 'messages', label: 'Запитвания', show: can('messages') },
     { to: 'settings', label: 'Фирма и меню', show: can('settings') },
+    { to: 'appearance', label: 'Външен вид', show: can('settings') },
     { to: 'comparator', label: 'Сравнител', show: can('content') },
     { to: 'users', label: 'Потребители', show: can('users') },
     { to: 'audit', label: 'Дневник', show: can('audit') },
@@ -262,7 +267,7 @@ function Shell({ me }: { me: Me }) {
           {links
             .filter((l) => l.show)
             .map((l) => (
-              <NavLink key={l.to} to={l.to}>
+              <NavLink key={l.to} to={`/admin/${l.to}`}>
                 {l.label}
               </NavLink>
             ))}
@@ -282,9 +287,12 @@ function Shell({ me }: { me: Me }) {
           </button>
         </div>
       </aside>
-      <main className="adm-main">
+      <main className={`adm-main${full ? ' full' : ''}`}>
         <Routes>
-          <Route index element={<Navigate to="content" replace />} />
+          <Route index element={<Navigate to="/admin/pages" replace />} />
+          <Route path="pages" element={<PageEditor me={me} />} />
+          <Route path="pages/:id" element={<PageEditor me={me} />} />
+          <Route path="appearance" element={<Appearance />} />
           <Route path="content" element={<ContentList me={me} />} />
           <Route
             path="media"
@@ -301,7 +309,7 @@ function Shell({ me }: { me: Me }) {
           <Route path="users" element={<Users me={me} />} />
           <Route path="audit" element={<Audit />} />
           <Route path="account" element={<Account />} />
-          <Route path="*" element={<Navigate to="content" replace />} />
+          <Route path="*" element={<Navigate to="/admin/pages" replace />} />
         </Routes>
       </main>
     </div>

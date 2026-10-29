@@ -18,6 +18,10 @@ function RichEditor(props: { html: string; onChange(html: string): void }) {
   )
 }
 
+/** Редакторът е вграден в /admin/pages (iframe): съобщава на админа коя страница е отворена и кога е записана. */
+const EMBED = window.parent !== window && new URLSearchParams(location.search).has('embed')
+const notify = (msg: { type: 'arc-page' | 'arc-saved'; id: number; dirty?: boolean }) => EMBED && window.parent.postMessage(msg, location.origin)
+
 interface Picker {
   kind: Media['kind']
   multiple: boolean
@@ -55,6 +59,10 @@ export default function Editor({ payload, reload, render }: Props) {
   useEffect(() => {
     if (!dirtyRef.current) setDraft(payload.page!)
   }, [payload.page])
+
+  useEffect(() => {
+    notify({ type: 'arc-page', id: draft.id, dirty })
+  }, [draft.id, dirty])
 
   useEffect(() => {
     document.body.classList.toggle('editing', editing)
@@ -164,6 +172,19 @@ export default function Editor({ payload, reload, render }: Props) {
     [editing, change, setBlocks, patchBlock, pickMedia, draft.lang],
   )
 
+  // Менюто се отваря нагоре, ако отдолу (над лентата на редактора) няма място за него.
+  function placeMenu(el: HTMLUListElement | null) {
+    if (!el || el.dataset.placed) return
+    el.dataset.placed = '1'
+    const r = el.getBoundingClientRect()
+    const room = innerHeight - 96
+    if (r.bottom <= room) return
+    if (el.parentElement!.getBoundingClientRect().top > r.height + 16) el.classList.add('up')
+    // Кратка страница: нито отдолу, нито отгоре има място — менюто се превърта вътрешно.
+    else el.style.maxHeight = `${Math.max(240, room - Math.max(r.top, 16))}px`
+    el.scrollIntoView({ block: 'nearest' })
+  }
+
   function Inserter({ index }: { index: number }) {
     const [open, setOpen] = useState(false)
     return (
@@ -172,7 +193,7 @@ export default function Editor({ payload, reload, render }: Props) {
           + Добавете секция
         </button>
         {open && (
-          <ul className="ed-insert-menu">
+          <ul className="ed-insert-menu" ref={placeMenu}>
             {BLOCKS.map((b) => (
               <li key={b.type}>
                 <button
@@ -205,9 +226,10 @@ export default function Editor({ payload, reload, render }: Props) {
       setDirty(false)
       dirtyRef.current = false
       if (saved.url !== location.pathname) {
-        location.href = saved.url + (editing ? '?edit' : '')
+        location.href = saved.url + (editing ? '?edit' : '') + (EMBED ? (editing ? '&embed' : '?embed') : '')
         return
       }
+      notify({ type: 'arc-saved', id: saved.id })
       setDraft(saved)
       await reload()
       setMsg({ text: status === 'published' ? 'Публикувано.' : status === 'draft' ? 'Скрито — вече е чернова.' : 'Запазено.' })
@@ -259,7 +281,7 @@ export default function Editor({ payload, reload, render }: Props) {
               Публикувайте
             </button>
           ))}
-        <a href="/admin">Админ панел</a>
+        {!EMBED && <a href="/admin">Админ панел</a>}
       </div>
       {panel === 'settings' && (
         <PageSettings page={draft} media={view.media} onChange={(patch) => change((p) => ({ ...p, ...patch }))} pickMedia={pickMedia} onClose={() => setPanel(null)} />

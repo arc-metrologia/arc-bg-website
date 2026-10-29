@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { api, slugify } from '../api'
-import { BLOCKS, TYPE_LABELS } from '../edit/blockDefs'
+import { Link, useNavigate } from 'react-router-dom'
+import { TEMPLATES, TYPE_LABELS } from '../edit/blockDefs'
+import PageLinkInput, { loadPages, usePages } from '../edit/PageLinkInput'
 import type { Me, NavItem, PageType, SiteInfo } from '../types'
 
 interface Row {
@@ -21,29 +23,28 @@ const PREFIX: Record<string, Record<PageType, string>> = {
   en: { product: 'products/', service: 'services/', post: 'blog/', category: '', page: '' },
 }
 
-function NewPage({ me, onCancel }: { me: Me; onCancel(): void }) {
+export function NewPage({ me, onCancel, parent: initialParent = '', lang: initialLang = 'bg' }: { me: Me; onCancel(): void; parent?: string; lang?: 'bg' | 'en' }) {
   const canAll = me.user!.permissions.includes('content')
-  const [type, setType] = useState<PageType>(canAll ? 'product' : 'post')
-  const [lang, setLang] = useState<'bg' | 'en'>('bg')
+  const navigate = useNavigate()
+  const [type, setType] = useState<PageType>(canAll ? (initialParent.startsWith('blog') ? 'post' : 'page') : 'post')
+  const [template, setTemplate] = useState(canAll ? 'blank' : 'post')
+  const [lang, setLang] = useState<'bg' | 'en'>(initialLang)
+  const [parent, setParent] = useState(initialParent)
   const [title, setTitle] = useState('')
   const [path, setPath] = useState('')
   const [touched, setTouched] = useState(false)
   const [error, setError] = useState('')
-  const auto = PREFIX[lang][type] + slugify(title)
+  const pages = usePages(lang)
+  const auto = (parent ? parent + '/' : PREFIX[lang][type]) + slugify(title)
 
   async function create(e: React.FormEvent) {
     e.preventDefault()
     setError('')
-    const make = (t: string) => BLOCKS.find((b) => b.type === t)!.make()
-    const blocks =
-      type === 'product'
-        ? [make('richtext'), make('specs'), make('cta')]
-        : type === 'category'
-          ? [make('richtext'), make('listing')]
-          : [make('richtext')]
+    const blocks = (TEMPLATES.find((t) => t.key === template) ?? TEMPLATES[0]).blocks()
     try {
-      const page = await api<{ url: string }>('admin/pages', { body: { type, lang, title, path: touched ? path : auto, blocks, status: 'draft' } })
-      location.href = page.url + '?edit'
+      const page = await api<{ id: number }>('admin/pages', { body: { type, lang, title, path: touched ? path : auto, blocks, status: 'draft' } })
+      loadPages(true)
+      navigate(`/admin/pages/${page.id}`)
     } catch (err) {
       setError((err as Error).message)
     }
@@ -71,6 +72,41 @@ function NewPage({ me, onCancel }: { me: Me; onCancel(): void }) {
           </select>
         </label>
       </div>
+      {canAll && (
+        <fieldset className="adm-templates">
+          <legend>Шаблон</legend>
+          {TEMPLATES.map((t) => (
+            <label key={t.key} className={template === t.key ? 'on' : undefined}>
+              <input
+                type="radio"
+                name="template"
+                checked={template === t.key}
+                onChange={() => {
+                  setTemplate(t.key)
+                  setType(t.type)
+                }}
+              />
+              <strong>{t.label}</strong>
+              <span>{t.hint}</span>
+            </label>
+          ))}
+        </fieldset>
+      )}
+      {canAll && (
+        <label>
+          Къде да е в структурата
+          <select value={parent} onChange={(e) => setParent(e.target.value)}>
+            <option value="">Самостоятелна страница (на първо ниво)</option>
+            {pages
+              .filter((p) => p.path !== '')
+              .map((p) => (
+                <option key={p.id} value={p.path}>
+                  {'— '.repeat(p.path.split('/').length - 1)}Подстраница на „{p.title}“
+                </option>
+              ))}
+          </select>
+        </label>
+      )}
       <label>
         Заглавие
         <input value={title} onChange={(e) => setTitle(e.target.value)} required autoFocus />
@@ -90,7 +126,7 @@ function NewPage({ me, onCancel }: { me: Me; onCancel(): void }) {
       </label>
       {error && <p className="adm-error" role="alert">{error}</p>}
       <div className="adm-row">
-        <button className="adm-btn primary">Създайте и отворете за редакция</button>
+        <button className="adm-btn primary">Създайте и отворете в редактора</button>
         <button type="button" className="adm-btn" onClick={onCancel}>
           Отказ
         </button>
@@ -151,9 +187,9 @@ export function ContentList({ me }: { me: Me }) {
           {shown.map((r) => (
             <tr key={r.id}>
               <td>
-                <a href={`${r.url}?edit`} className="adm-title">
+                <Link to={`/admin/pages/${r.id}`} className="adm-title">
                   {r.title}
-                </a>
+                </Link>
                 <span className="adm-url">
                   {r.lang.toUpperCase()} · {r.url}
                 </span>
@@ -164,8 +200,11 @@ export function ContentList({ me }: { me: Me }) {
               </td>
               <td>{fmt(r.updated_at)}</td>
               <td className="adm-actions">
-                <a href={`${r.url}?edit`} className="adm-btn small">
+                <Link to={`/admin/pages/${r.id}`} className="adm-btn small">
                   Редактирайте
+                </Link>
+                <a href={r.url} className="adm-btn small" target="_blank" rel="noopener">
+                  Вижте
                 </a>
                 {canDelete && r.path !== '' && (
                   <button
@@ -173,8 +212,13 @@ export function ContentList({ me }: { me: Me }) {
                     className="adm-btn small danger"
                     onClick={async () => {
                       if (!confirm(`Да изтрия ли „${r.title}“ окончателно? Ако страницата е индексирана, добавете пренасочване.`)) return
-                      await api(`admin/pages/${r.id}`, { method: 'DELETE' })
-                      load()
+                      try {
+                        await api(`admin/pages/${r.id}`, { method: 'DELETE' })
+                        loadPages(true)
+                        load()
+                      } catch (e) {
+                        alert(`Страницата не е изтрита: ${(e as Error).message}`)
+                      }
                     }}
                   >
                     Изтрийте
@@ -216,7 +260,8 @@ export function Messages() {
   )
 }
 
-function NavEditor({ items, onChange }: { items: NavItem[]; onChange(i: NavItem[]): void }) {
+function NavEditor({ items, onChange, lang }: { items: NavItem[]; onChange(i: NavItem[]): void; lang: 'bg' | 'en' }) {
+  const pages = usePages(lang)
   const upd = (i: number, patch: Partial<NavItem>) => onChange(items.map((x, j) => (j === i ? { ...x, ...patch } : x)))
   const move = (i: number, d: number) => {
     const next = [...items]
@@ -230,7 +275,13 @@ function NavEditor({ items, onChange }: { items: NavItem[]; onChange(i: NavItem[
         <li key={i}>
           <div className="adm-row">
             <input value={it.label} placeholder="Текст" onChange={(e) => upd(i, { label: e.target.value })} aria-label="Текст" />
-            <input value={it.url} placeholder="/adres" onChange={(e) => upd(i, { url: e.target.value })} aria-label="Адрес" />
+            <PageLinkInput
+              lang={lang}
+              value={it.url}
+              placeholder="Изберете страница или https://…"
+              aria-label="Адрес"
+              onChange={(url) => upd(i, { url, label: it.label || pages.find((p) => p.url === url)?.title || '' })}
+            />
             <button type="button" className="adm-btn small" disabled={i === 0} onClick={() => move(i, -1)} aria-label="Нагоре">
               ↑
             </button>
@@ -241,7 +292,7 @@ function NavEditor({ items, onChange }: { items: NavItem[]; onChange(i: NavItem[
               ✕
             </button>
           </div>
-          {it.children !== undefined && <NavEditor items={it.children} onChange={(children) => upd(i, { children })} />}
+          {it.children !== undefined && <NavEditor lang={lang} items={it.children} onChange={(children) => upd(i, { children })} />}
           {it.children === undefined && (
             <button type="button" className="adm-link" onClick={() => upd(i, { children: [] })}>
               + подменю
@@ -275,9 +326,19 @@ export function Settings() {
       ),
     )
   }, [])
+  const [error, setError] = useState('')
   const flash = (m: string) => {
     setMsg(m)
     setTimeout(() => setMsg(''), 3000)
+  }
+  const saveWith = async (fn: () => Promise<unknown>, ok: string) => {
+    setError('')
+    try {
+      await fn()
+      flash(ok)
+    } catch (e) {
+      setError((e as Error).message)
+    }
   }
   if (!site) return <p>Зареждане…</p>
   const field = (label: string, key: string, sub?: 'bg' | 'en', area = false) => {
@@ -295,6 +356,11 @@ export function Settings() {
       <div className="adm-head">
         <h1>Фирма и меню</h1>
         {msg && <span className="adm-ok" role="status">{msg}</span>}
+        {error && (
+          <span className="adm-error" role="alert">
+            Не е запазено: {error}
+          </span>
+        )}
       </div>
       <section className="adm-card adm-form">
         <h2>Данни за фирмата</h2>
@@ -315,31 +381,25 @@ export function Settings() {
         <button
           type="button"
           className="adm-btn primary"
-          onClick={async () => {
-            await api('admin/settings/site', { method: 'PUT', body: site })
-            flash('Данните са запазени.')
-          }}
+          onClick={() => saveWith(() => api('admin/settings/site', { method: 'PUT', body: site }), 'Данните са запазени.')}
         >
           Запазете данните
         </button>
       </section>
       <section className="adm-card">
         <h2>Главно меню</h2>
-        <div className="adm-tabs">
+        <div className="adm-tabs" role="tablist" aria-label="Език на менюто">
           {(['bg', 'en'] as const).map((l) => (
-            <button key={l} type="button" aria-selected={navLang === l} onClick={() => setNavLang(l)}>
+            <button key={l} type="button" role="tab" aria-selected={navLang === l} onClick={() => setNavLang(l)}>
               {l === 'bg' ? 'Български' : 'English'}
             </button>
           ))}
         </div>
-        <NavEditor items={nav[navLang]} onChange={(items) => setNav({ ...nav, [navLang]: items })} />
+        <NavEditor lang={navLang} items={nav[navLang]} onChange={(items) => setNav({ ...nav, [navLang]: items })} />
         <button
           type="button"
           className="adm-btn primary"
-          onClick={async () => {
-            await api(`admin/settings/nav_${navLang}`, { method: 'PUT', body: nav[navLang] })
-            flash('Менюто е запазено.')
-          }}
+          onClick={() => saveWith(() => api(`admin/settings/nav_${navLang}`, { method: 'PUT', body: nav[navLang] }), 'Менюто е запазено.')}
         >
           Запазете менюто
         </button>
@@ -351,14 +411,13 @@ export function Settings() {
         <button
           type="button"
           className="adm-btn primary"
-          onClick={async () => {
+          onClick={() => {
             const map: Record<string, string> = {}
             for (const line of redirects.split('\n')) {
               const [from, to] = line.trim().split(/\s+/)
               if (from && to) map[from] = to
             }
-            await api('admin/settings/redirects', { method: 'PUT', body: map })
-            flash('Пренасочванията са запазени.')
+            saveWith(() => api('admin/settings/redirects', { method: 'PUT', body: map }), 'Пренасочванията са запазени.')
           }}
         >
           Запазете пренасочванията

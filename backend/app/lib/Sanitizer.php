@@ -5,7 +5,7 @@ declare(strict_types=1);
 final class Sanitizer
 {
     private const TAGS = [
-        'p' => [], 'br' => [], 'h2' => ['id'], 'h3' => ['id'], 'h4' => [],
+        'p' => ['style'], 'br' => [], 'h2' => ['id', 'style'], 'h3' => ['id', 'style'], 'h4' => ['style'], 'span' => ['style'],
         'strong' => [], 'em' => [], 'b' => [], 'i' => [], 'u' => [], 's' => [], 'sup' => [], 'sub' => [],
         'code' => [], 'pre' => [], 'blockquote' => [], 'hr' => [],
         'ul' => [], 'ol' => ['start'], 'li' => [],
@@ -79,10 +79,39 @@ final class Sanitizer
                     $c->removeAttribute('target');
                 }
             }
+            if ($c->hasAttribute('style')) {
+                $style = self::style($c->getAttribute('style'));
+                $style === '' ? $c->removeAttribute('style') : $c->setAttribute('style', $style);
+            }
+            if ($tag === 'span' && !$c->hasAttribute('style')) {
+                while ($c->firstChild) {
+                    $node->insertBefore($c->firstChild, $c);
+                }
+                $node->removeChild($c);
+                continue;
+            }
             if ($tag === 'img' && !str_starts_with($c->getAttribute('src'), '/uploads/')) {
                 $node->removeChild($c);
             }
         }
+    }
+
+    /** От inline стиловете остават само цвят (hex или променлива от темата) и подравняване. */
+    private static function style(string $css): string
+    {
+        $out = [];
+        foreach (explode(';', $css) as $decl) {
+            [$prop, $val] = array_map('trim', explode(':', $decl, 2) + [1 => '']);
+            $prop = strtolower($prop);
+            $val = strtolower($val);
+            if ($prop === 'color' && preg_match('/^(#[0-9a-f]{3}|#[0-9a-f]{6}|var\(--[a-z-]{2,20}\)|rgb\(\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}\s*\))$/', $val)) {
+                $out['color'] = $val;
+            }
+            if ($prop === 'text-align' && in_array($val, ['left', 'center', 'right', 'justify'], true)) {
+                $out['text-align'] = $val;
+            }
+        }
+        return implode('; ', array_map(fn($k, $v) => "$k: $v", array_keys($out), $out));
     }
 
     public static function safeUrl(?string $url): bool
@@ -111,7 +140,7 @@ final class Sanitizer
     // ---------------------------------------------------------------- блокове
 
     public const BLOCK_TYPES = ['hero', 'richtext', 'image', 'gallery', 'video', 'features', 'steps', 'faq',
-        'specs', 'cta', 'listing', 'carousel', 'testimonials', 'logos', 'contact', 'downloads'];
+        'specs', 'cta', 'listing', 'carousel', 'testimonials', 'logos', 'contact', 'downloads', 'placeholder'];
 
     /** Нормализира масив от блокове: само познати типове и полета, почистен HTML и URL-и. */
     public static function blocks(mixed $blocks): array
@@ -193,6 +222,7 @@ final class Sanitizer
             ],
             'testimonials' => ['items' => self::items($b['items'] ?? [], ['quote' => 'text', 'author' => 'text', 'company' => 'text'])],
             'contact' => ['text' => self::text($b['text'] ?? '', 1000)],
+            'placeholder' => ['note' => self::text($b['note'] ?? '', 1000)],
         };
     }
 }

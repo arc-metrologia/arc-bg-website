@@ -175,6 +175,9 @@ body.editing {
 .ed-insert-menu {
   position: absolute;
   top: 100%;
+  /* при превъртане да остане над долната лента на редактора */
+  scroll-margin-bottom: 96px;
+  scroll-margin-top: 16px;
   z-index: 60;
   width: min(560px, calc(100vw - 32px));
   display: grid;
@@ -186,6 +189,16 @@ body.editing {
   background: #fff;
   border: 1px solid var(--rule);
   box-shadow: 0 10px 30px rgba(5, 58, 89, 0.18);
+}
+
+.ed-insert-menu {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.ed-insert-menu.up {
+  top: auto;
+  bottom: 100%;
 }
 
 .ed-insert-menu button {
@@ -815,4 +828,108 @@ body.editing {
 .adm-btn.small {
   padding: 5px 10px;
   font-size: 0.8rem;
+}
+
+/* Текстов редактор: цветове, подравняване, връзки */
+.ed-rich-sep {
+  width: 1px;
+  margin: 2px 4px;
+  background: var(--rule);
+}
+
+.ed-rich-colors {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.ed-rich-bar .ed-swatch {
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 1px var(--rule);
+}
+
+.ed-rich-bar .ed-swatch.on {
+  box-shadow: 0 0 0 2px var(--ink);
+}
+
+.ed-swatch.custom {
+  position: relative;
+  display: inline-block;
+  overflow: hidden;
+  background: conic-gradient(#e5484d, #f0b323, #2fb36b, #0b73d9, #8e4ec6, #e5484d);
+  cursor: pointer;
+}
+
+.ed-swatch.custom input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.ed-rich-link {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: flex-start;
+  padding: 8px;
+  background: #fffdf5;
+  border-bottom: 1px solid var(--ed);
+}
+
+.ed-rich-link button {
+  font: 600 0.8rem var(--text);
+  padding: 6px 10px;
+  background: #fff;
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  cursor: pointer;
+}
+
+.ed-rich-link button.primary {
+  background: var(--petrol);
+  border-color: var(--petrol);
+  color: #fff;
+}
+
+.page-link {
+  display: inline-grid;
+  gap: 2px;
+  flex: 1;
+  min-width: 260px;
+}
+
+.page-link input {
+  font: inherit;
+  padding: 6px 8px;
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  width: 100%;
+}
+
+.page-link-hint {
+  color: var(--steel);
+  font-size: 0.8rem;
+}
+
+/* Празна секция — вижда се само при редакция */
+.placeholder-box {
+  display: grid;
+  gap: 6px;
+  min-height: 120px;
+  place-content: center;
+  text-align: center;
+  padding: 24px;
+  border: 2px dashed var(--rule);
+  border-radius: 3px;
+  background: repeating-linear-gradient(-45deg, var(--plate), var(--plate) 10px, transparent 10px, transparent 20px);
+  color: var(--steel);
+}
+
+.placeholder-box p {
+  margin: 0;
 }

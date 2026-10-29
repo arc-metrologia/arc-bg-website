@@ -38,6 +38,7 @@ export type Block = Base &
     | { type: 'carousel'; source: 'latest' | 'posts' | 'products' | 'manual'; pages: number[]; limit: number }
     | { type: 'testimonials'; items: { quote: string; author: string; company: string }[] }
     | { type: 'contact'; text: string }
+    | { type: 'placeholder'; note: string }
   )
 
 export type BlockType = Block['type']
