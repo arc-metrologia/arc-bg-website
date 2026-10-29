@@ -1,9 +1,12 @@
 import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { api } from '../api'
 import { EditContext, type EditApi } from '../site/edit-context'
-import type { Block, Media, Me, Page, Payload } from '../types'
+import { SIZABLE } from '../site/box'
+import type { Block, BoxAlign, Media, Me, Page, Payload } from '../types'
 import { BLOCKS, CAROUSEL_SOURCES, LISTING_SOURCES, blockLabel } from './blockDefs'
+import BoxResize from './BoxResize'
 import CarouselPages from './CarouselPages'
+import FxControls from './FxControls'
 import MediaLibrary from './MediaLibrary'
 import PageSettings from './PageSettings'
 import '../styles/edit.css'
@@ -120,10 +123,81 @@ export default function Editor({ payload, reload, render }: Props) {
             next.splice(index + d, 0, x)
             return next
           })
+        // Влачене на секция за „⠿“ и пускане върху друга (горната или долната ѝ половина).
+        const DND = 'application/x-arc-block'
+        const half = (e: React.DragEvent<HTMLElement>) => {
+          const r = e.currentTarget.getBoundingClientRect()
+          return e.clientY > r.top + r.height / 2 ? 'after' : 'before'
+        }
+        const clearDrop = (el: HTMLElement) => el.classList.remove('drop-before', 'drop-after')
+        const sized = SIZABLE.includes(block.type)
+        const setAlign = (align: BoxAlign) => patchBlock(block.id, { align, width: block.width ?? 60 })
         return (
-          <div className="ed-frame">
+          <div
+            className="ed-frame"
+            onDragOver={(e) => {
+              if (!e.dataTransfer.types.includes(DND)) return
+              e.preventDefault()
+              e.dataTransfer.dropEffect = 'move'
+              const h = half(e)
+              e.currentTarget.classList.toggle('drop-before', h === 'before')
+              e.currentTarget.classList.toggle('drop-after', h === 'after')
+            }}
+            onDragLeave={(e) => !e.currentTarget.contains(e.relatedTarget as Node) && clearDrop(e.currentTarget)}
+            onDrop={(e) => {
+              const raw = e.dataTransfer.getData(DND)
+              clearDrop(e.currentTarget)
+              if (raw === '') return
+              e.preventDefault()
+              const from = Number(raw)
+              const to = index + (half(e) === 'after' ? 1 : 0)
+              if (to === from || to === from + 1) return
+              setBlocks((bs) => {
+                const next = [...bs]
+                const [x] = next.splice(from, 1)
+                next.splice(to > from ? to - 1 : to, 0, x)
+                return next
+              })
+            }}
+          >
+            {sized && <BoxResize width={block.width} align={block.align} onChange={(patch) => patchBlock(block.id, patch)} />}
             <div className="ed-frame-bar">
-              <span>{blockLabel(block.type)}</span>
+              <span
+                className="ed-grip"
+                draggable
+                title="Влачете, за да преместите секцията"
+                onDragStart={(e) => {
+                  e.dataTransfer.setData(DND, String(index))
+                  e.dataTransfer.effectAllowed = 'move'
+                  const frame = e.currentTarget.closest('.ed-frame')
+                  if (frame) e.dataTransfer.setDragImage(frame, 20, 20)
+                }}
+              >
+                ⠿ {blockLabel(block.type)}
+              </span>
+              {sized && (
+                <>
+                  {(
+                    [
+                      ['left', '⇤', 'Вляво'],
+                      ['center', '⇔', 'В средата'],
+                      ['right', '⇥', 'Вдясно'],
+                    ] as const
+                  ).map(([a, label, title]) => (
+                    <button key={a} type="button" className={block.width && (block.align ?? 'left') === a ? 'on' : undefined} onClick={() => setAlign(a)} title={title} aria-label={title}>
+                      {label}
+                    </button>
+                  ))}
+                  {block.width ? (
+                    <button type="button" onClick={() => patchBlock(block.id, { width: undefined, align: undefined })} title="Стандартна ширина">
+                      {block.width}% ↺
+                    </button>
+                  ) : null}
+                </>
+              )}
+              {(block.type === 'hero' || block.type === 'image') && (
+                <FxControls fx={block} onChange={(fx) => patchBlock(block.id, fx as Partial<Block>)} />
+              )}
               {block.type === 'listing' && (
                 <select value={block.source} onChange={(e) => setBlocks((bs) => bs.map((b) => (b.id === block.id ? ({ ...b, source: e.target.value } as Block) : b)))} aria-label="Източник">
                   {LISTING_SOURCES.map((s) => (
@@ -273,8 +347,13 @@ export default function Editor({ payload, reload, render }: Props) {
         </button>
         {can('publish') &&
           (draft.status === 'published' ? (
-            <button type="button" disabled={saving} onClick={() => save('draft')}>
-              Скрийте
+            <button
+              type="button"
+              disabled={saving}
+              title="Страницата става чернова и посетителите не я виждат"
+              onClick={() => confirm('Страницата ще бъде скрита от посетителите на сайта (става чернова). Продължавате ли?') && save('draft')}
+            >
+              Скрийте от сайта
             </button>
           ) : (
             <button type="button" className="accent" disabled={saving} onClick={() => save('published')}>

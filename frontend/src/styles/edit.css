@@ -933,3 +933,366 @@ body.editing {
 .placeholder-box p {
   margin: 0;
 }
+
+/* Шахматен фон — личи кое е прозрачно */
+.ml-grid img,
+.ml-side img,
+.rb-preview canvas {
+  background-color: #fff;
+  background-image: conic-gradient(#e4e9ec 25%, transparent 0 50%, #e4e9ec 0 75%, transparent 0);
+  background-size: 16px 16px;
+}
+
+/* Премахване на белия фон */
+.rb-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgba(15, 29, 38, 0.55);
+}
+
+.rb {
+  width: min(1100px, 100%);
+  max-height: calc(100vh - 32px);
+  overflow: auto;
+  background: #fff;
+  color: var(--ink);
+  border-radius: 4px;
+  font: 400 0.9rem var(--text);
+}
+
+.rb-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--rule);
+}
+
+.rb-head h2 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.rb-close {
+  border: 0;
+  background: none;
+  font-size: 1.1rem;
+  cursor: pointer;
+  color: var(--steel);
+}
+
+.rb-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 20px;
+  padding: 20px;
+}
+
+.rb-preview {
+  display: grid;
+  place-items: center;
+  min-height: 300px;
+  border: 1px solid var(--rule);
+}
+
+.rb-preview canvas {
+  max-width: 100%;
+  max-height: 65vh;
+}
+
+.rb-controls {
+  display: grid;
+  gap: 14px;
+  align-content: start;
+}
+
+.rb-controls label {
+  display: grid;
+  gap: 4px;
+  font-weight: 600;
+}
+
+.rb-controls small,
+.rb-note {
+  font-weight: 400;
+  color: var(--steel);
+  margin: 0;
+}
+
+.rb-controls fieldset {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--rule);
+}
+
+.rb-controls legend {
+  font-weight: 600;
+}
+
+.rb-controls .rb-radio {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  font-weight: 400;
+}
+
+.rb-error {
+  color: #b42318;
+  margin: 0;
+}
+
+.rb-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+@media (max-width: 760px) {
+  .rb-body {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Разместване на секции с влачене */
+.ed-grip {
+  cursor: grab;
+}
+
+.ed-grip:active {
+  cursor: grabbing;
+}
+
+.ed-frame.drop-before {
+  box-shadow: inset 0 4px 0 var(--ed);
+}
+
+.ed-frame.drop-after {
+  box-shadow: inset 0 -4px 0 var(--ed);
+}
+
+.ed-frame-bar button.on {
+  background: var(--ed);
+  color: #000;
+}
+
+/* Дръжка за размера на снимката във водещата секция (долу вляво — вдясно е размерната линия) */
+.ed-scale {
+  position: absolute;
+  left: -7px;
+  bottom: -7px;
+  z-index: 5;
+  width: 16px;
+  height: 16px;
+  background: var(--ed);
+  border: 2px solid #fff;
+  border-radius: 2px;
+  box-shadow: 0 0 0 1px var(--ed-ui);
+  cursor: nesw-resize;
+  touch-action: none;
+}
+
+.ed-scale b {
+  position: absolute;
+  left: 20px;
+  bottom: 0;
+  padding: 2px 6px;
+  background: var(--ed-ui);
+  color: #fff;
+  font: 600 0.75rem var(--text);
+  border-radius: 2px;
+  white-space: nowrap;
+}
+
+/* Дръжка за ширината на секцията */
+.ed-box-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 4;
+}
+
+.ed-box-handle {
+  position: absolute;
+  width: 14px;
+  margin-left: -7px;
+  pointer-events: auto;
+  cursor: ew-resize;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.ed-box-handle::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 4px;
+  width: 6px;
+  height: 48px;
+  max-height: 100%;
+  transform: translateY(-50%);
+  background: var(--ed);
+  border: 1px solid var(--ed-ui);
+  border-radius: 3px;
+}
+
+.ed-box-handle::after {
+  content: '';
+  position: absolute;
+  inset: 0 6px;
+  border-left: 1px dashed var(--ed);
+}
+
+.ed-frame:hover .ed-box-handle,
+.ed-box-handle:focus-visible,
+.ed-box-handle.on {
+  opacity: 1;
+}
+
+.ed-box-handle span {
+  position: absolute;
+  top: 8px;
+  left: 14px;
+  padding: 2px 6px;
+  background: var(--ed-ui);
+  color: #fff;
+  font: 600 0.75rem var(--text);
+  border-radius: 2px;
+  white-space: nowrap;
+}
+
+@media (max-width: 700px) {
+  .ed-box-layer {
+    display: none;
+  }
+}
+
+/* Снимка в текста: дръжки за размер и положение */
+.ed-rich-label {
+  font-size: 0.8rem;
+  color: var(--steel);
+  align-self: center;
+}
+
+.ed-rich-body [data-resize-container] {
+  margin: 1.5em 0;
+}
+
+/* Положението и размерът се задават на контейнера; снимката само го запълва, без да се разкривява. */
+.ed-rich-body.prose [data-resize-wrapper] img {
+  float: none;
+  margin: 0;
+  max-width: 100%;
+  height: auto !important;
+}
+
+.ed-rich-body [data-resize-container]:has(img[data-align='center']) {
+  justify-content: center;
+}
+
+.ed-rich-body [data-resize-container]:has(img[data-align='wrap-left']) {
+  float: left;
+  max-width: 50%;
+  margin: 0.3em 1.5em 1em 0;
+}
+
+.ed-rich-body [data-resize-container]:has(img[data-align='wrap-right']) {
+  float: right;
+  max-width: 50%;
+  margin: 0.3em 0 1em 1.5em;
+}
+
+.ed-rich-body [data-resize-handle] {
+  width: 14px;
+  height: 14px;
+  background: var(--ed);
+  border: 2px solid #fff;
+  border-radius: 2px;
+  box-shadow: 0 0 0 1px var(--ed-ui);
+  opacity: 0;
+  z-index: 2;
+}
+
+.ed-rich-body [data-resize-handle='bottom-right'] {
+  cursor: nwse-resize;
+}
+
+.ed-rich-body [data-resize-handle='bottom-left'] {
+  cursor: nesw-resize;
+}
+
+.ed-rich-body [data-resize-container]:hover [data-resize-handle],
+.ed-rich-body .ProseMirror-selectednode [data-resize-handle] {
+  opacity: 1;
+}
+
+.ed-rich-body .ProseMirror-selectednode img,
+.ed-rich-body [data-resize-container].ProseMirror-selectednode img {
+  outline: 2px solid var(--ed);
+}
+
+/* Ефект върху снимка (сияние, сянка, контур) */
+.ed-fx {
+  position: relative;
+}
+
+.ed-fx-pop {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 20;
+  display: grid;
+  gap: 10px;
+  width: 260px;
+  padding: 12px;
+  background: #fff;
+  color: var(--ink);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  box-shadow: 0 8px 24px rgba(15, 29, 38, 0.18);
+}
+
+.ed-fx-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+}
+
+.ed-frame-bar .ed-fx-pop button {
+  background: var(--plate);
+  color: var(--ink);
+}
+
+.ed-frame-bar .ed-fx-pop button.on {
+  background: var(--ed);
+  color: #000;
+}
+
+.ed-frame-bar .ed-fx-pop .ed-swatch {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 1px var(--rule);
+}
+
+.ed-frame-bar .ed-fx-pop .ed-swatch.on {
+  box-shadow: 0 0 0 2px var(--ink);
+}
+
+.ed-frame-bar .ed-fx-pop .ed-swatch.custom {
+  background: conic-gradient(#e5484d, #f0b323, #2fb36b, #0b73d9, #8e4ec6, #e5484d);
+}
+
+.ed-fx-size {
+  display: grid;
+  gap: 4px;
+  font-weight: 600;
+}

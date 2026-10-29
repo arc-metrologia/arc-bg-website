@@ -23,6 +23,30 @@ const toHex = (c: string) => {
   return m ? '#' + m.slice(1).map((x) => Number(x).toString(16).padStart(2, '0')).join('') : c.toLowerCase()
 }
 
+/** Снимка в текста: размер с дръжките в ъглите, положение с data-align (Sanitizer::IMG_ALIGN). */
+const TextImage = Image.extend({
+  addAttributes() {
+    return {
+      ...this.parent?.(),
+      align: {
+        default: null,
+        parseHTML: (el) => el.getAttribute('data-align'),
+        renderHTML: (a) => (a.align ? { 'data-align': a.align } : {}),
+      },
+    }
+  },
+}).configure({
+  inline: false,
+  resize: { enabled: true, directions: ['bottom-left', 'bottom-right'], minWidth: 60, minHeight: 40, alwaysPreserveAspectRatio: true },
+})
+
+const IMG_ALIGN = [
+  { value: 'wrap-left', label: '◧ Вляво', title: 'Снимката вляво, текстът я обтича отдясно' },
+  { value: 'wrap-right', label: '◨ Вдясно', title: 'Снимката вдясно, текстът я обтича отляво' },
+  { value: null, label: 'Самостоятелно', title: 'На отделен ред, вляво' },
+  { value: 'center', label: 'В средата', title: 'На отделен ред, в средата' },
+]
+
 const ALIGN = [
   { value: 'left', label: '⇤', title: 'Подравняване вляво' },
   { value: 'center', label: '⇔', title: 'Центриране' },
@@ -46,7 +70,7 @@ export default function RichEditor({ html, onChange }: { html: string; onChange(
       TextStyle,
       Color,
       TextAlign.configure({ types: ['heading', 'paragraph'], alignments: ['left', 'center', 'right'] }),
-      Image.configure({ inline: false }),
+      TextImage,
     ],
     content: html,
     onCreate: ({ editor }) => {
@@ -75,6 +99,8 @@ export default function RichEditor({ html, onChange }: { html: string; onChange(
         table: e.isActive('table'),
         quote: e.isActive('blockquote'),
         color: toHex((e.getAttributes('textStyle').color as string | undefined) ?? ''),
+        img: e.isActive('image'),
+        imgAlign: (e.getAttributes('image').align as string | null) ?? null,
         align: ALIGN.find((a) => e.isActive({ textAlign: a.value }))?.value ?? 'left',
       },
   })
@@ -140,6 +166,14 @@ export default function RichEditor({ html, onChange }: { html: string; onChange(
             {btn('− ред', false, () => c().deleteRow().run())}
             {btn('− колона', false, () => c().deleteColumn().run())}
             {btn('Без таблица', false, () => c().deleteTable().run())}
+          </>
+        )}
+        {s.img && (
+          <>
+            <span className="ed-rich-sep" />
+            <span className="ed-rich-label">Снимка:</span>
+            {IMG_ALIGN.map((a) => btn(a.label, s.imgAlign === a.value, () => c().updateAttributes('image', { align: a.value }).run(), a.title))}
+            {btn('Пълен размер', false, () => c().updateAttributes('image', { width: null, height: null }).run(), 'Върни естествения размер (до ширината на текста)')}
           </>
         )}
         {btn('Изчисти', false, () => c().unsetAllMarks().unsetTextAlign().run(), 'Премахни форматирането на избрания текст')}

@@ -383,6 +383,26 @@ p {
   max-width: 28ch;
 }
 
+/* Секция с избрана ширина (--bw) и подравняване — от редактора */
+.blk.blk-box > .wrap > * {
+  max-width: var(--bw);
+}
+
+.blk-box.al-center > .wrap > * {
+  margin-inline: auto;
+}
+
+.blk-box.al-right > .wrap > * {
+  margin-left: auto;
+  margin-right: 0;
+}
+
+@media (max-width: 700px) {
+  .blk.blk-box > .wrap > * {
+    max-width: none;
+  }
+}
+
 .intro {
   max-width: 62ch;
   color: var(--steel);
@@ -431,7 +451,7 @@ p {
 
 .hero-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, var(--img-col, 1fr));
   gap: clamp(32px, 6vw, 80px);
   align-items: center;
 }
@@ -440,11 +460,18 @@ p {
   margin: 0;
   position: relative;
   padding: 34px 38px 0 0;
+  width: var(--img, 100%);
+  justify-self: center;
 }
 
+/* Ефект върху снимката (сияние, сянка, контур) — следва формата на прозрачна снимка */
+.fx img {
+  filter: var(--fx);
+}
+
+/* Без фон — снимки с прозрачен фон („Премахнете белия фон“) стоят направо върху секцията. */
 .dim-frame {
   position: relative;
-  background: #fff;
 }
 
 .dim-frame img {
@@ -530,6 +557,39 @@ p {
   max-width: 100%;
   height: auto;
   margin: 1.5em 0;
+}
+
+/* Положение на снимка в текста (data-align от редактора) */
+.prose {
+  display: flow-root;
+}
+
+.prose img[data-align='center'] {
+  margin-inline: auto;
+}
+
+.prose img[data-align='right'] {
+  margin-left: auto;
+}
+
+.prose img[data-align='wrap-left'] {
+  float: left;
+  max-width: 50%;
+  margin: 0.3em 1.5em 1em 0;
+}
+
+.prose img[data-align='wrap-right'] {
+  float: right;
+  max-width: 50%;
+  margin: 0.3em 0 1em 1.5em;
+}
+
+@media (max-width: 600px) {
+  .prose img[data-align^='wrap'] {
+    float: none;
+    max-width: 100%;
+    margin: 1.5em 0;
+  }
 }
 
 .prose blockquote {

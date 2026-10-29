@@ -3,9 +3,10 @@ import { api } from '../api'
 import { t } from '../i18n'
 import type { Block, BlockOf, BlockType, Card, Media, Payload } from '../types'
 import { useEdit } from './edit-context'
-import { AddItem, ImageSlot, ItemTools, Rich, Text } from './editable'
+import { AddItem, ImageSlot, ItemTools, Rich, ScaleHandle, Text } from './editable'
 import Carousel from './Carousel'
 import Img from './Img'
+import { fxProps, heroGridStyle } from './box'
 import PageLinkInput from '../edit/PageLinkInput'
 
 interface P<T extends BlockType> {
@@ -21,11 +22,28 @@ function Heading({ block, set, as = 'h2' }: { block: Block; set(p: Partial<Block
   return <Text as={as} value={block.heading} onChange={(heading) => set({ heading })} placeholder="Заглавие на секцията" />
 }
 
+/**
+ * Размер (%) по позицията на дръжката долу вляво на снимката във водещата секция.
+ * До 100 % снимката е центрирана в дясната колона; над 100 % колоната расте за сметка на текста.
+ */
+function heroSize(x: number, handle: HTMLElement): number | null {
+  const grid = handle.closest<HTMLElement>('.hero-grid')
+  if (!grid) return null
+  const cs = getComputedStyle(grid)
+  if (cs.gridTemplateColumns.split(' ').length < 2) return null // на телефон колоната е една
+  const r = grid.getBoundingClientRect()
+  const avail = r.width - (parseFloat(cs.columnGap) || 0)
+  const half = avail / 2
+  const d = Math.min(r.right - x, avail * 0.75)
+  return d <= half ? ((d - half / 2) * 200) / half : (d / (avail - d)) * 100
+}
+
 function Hero({ block, payload, set, first }: P<'hero'>) {
   const m = media(payload, block.image)
   const { editing } = useEdit()
+  const fx = fxProps(block)
   return (
-    <div className="hero-grid">
+    <div className="hero-grid" style={heroGridStyle(block.imageSize)}>
       <div className="hero-copy">
         <Heading block={block} set={set} as={first ? 'h1' : 'h2'} />
         <Text as="p" value={block.text} onChange={(text) => set({ text })} placeholder="Кратък текст под заглавието" multiline />
@@ -37,7 +55,8 @@ function Hero({ block, payload, set, first }: P<'hero'>) {
         {editing && <UrlField value={block.ctaUrl} onChange={(ctaUrl) => set({ ctaUrl })} />}
       </div>
       {(m || editing) && (
-        <figure className="hero-figure">
+        <figure className={`hero-figure ${fx.className ?? ''}`.trim()} style={fx.style}>
+          {editing && m && <ScaleHandle value={block.imageSize ?? 100} min={20} max={200} measure={heroSize} onChange={(imageSize) => set({ imageSize })} />}
           <div className="dim-frame">
             <ImageSlot media={m} onPick={(x) => set({ image: x.id })} sizes="(min-width: 900px) 50vw, 100vw" eager={first} />
           </div>
@@ -318,7 +337,7 @@ export function BlockView({ block, payload, set, first }: { block: Block; payloa
       )
     case 'image':
       return (
-        <figure>
+        <figure {...fxProps(block)}>
           <ImageSlot media={media(payload, block.image)} onPick={(m) => set({ image: m.id })} sizes="(min-width: 1200px) 1100px, 100vw" />
           <Text as="figcaption" value={block.caption} onChange={(caption) => set({ caption })} placeholder="Надпис под снимката" />
         </figure>

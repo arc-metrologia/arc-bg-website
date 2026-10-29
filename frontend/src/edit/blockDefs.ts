@@ -4,7 +4,7 @@ const id = () => Math.random().toString(36).slice(2, 10)
 
 export const BLOCKS: { type: BlockType; label: string; hint: string; make(): Block }[] = [
   { type: 'richtext', label: 'Текст', hint: 'Заглавия, списъци, таблици, връзки', make: () => ({ id: id(), type: 'richtext', heading: '', html: '<p></p>' }) },
-  { type: 'hero', label: 'Водеща секция', hint: 'Голямо заглавие, текст, бутон и снимка', make: () => ({ id: id(), type: 'hero', heading: '', text: '', image: null, measure: '', ctaLabel: '', ctaUrl: '' }) },
+  { type: 'hero', label: 'Водеща секция', hint: 'Голямо заглавие, текст, бутон и снимка', make: () => ({ id: id(), type: 'hero', heading: '', text: '', image: null, imageSize: 100, measure: '', ctaLabel: '', ctaUrl: '' }) },
   { type: 'image', label: 'Изображение', hint: 'Една снимка с надпис', make: () => ({ id: id(), type: 'image', heading: '', image: null, caption: '' }) },
   { type: 'gallery', label: 'Галерия', hint: 'Няколко снимки в мрежа', make: () => ({ id: id(), type: 'gallery', heading: '', images: [] }) },
   { type: 'video', label: 'Видео', hint: 'YouTube, Vimeo или качен файл', make: () => ({ id: id(), type: 'video', heading: '', provider: 'youtube', videoId: '', media: null, poster: null, caption: '' }) },

@@ -90,6 +90,7 @@ final class Media
             };
         }
         $img = self::fit($img, self::MAX_SIDE);
+        imagesavealpha($img, true); // прозрачен фон (напр. след „Премахнете белия фон“)
         $w = imagesx($img);
         $h = imagesy($img);
         $alpha = in_array($mime, ['image/png', 'image/webp', 'image/gif'], true);

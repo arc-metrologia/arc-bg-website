@@ -17,14 +17,18 @@ export interface Media {
   variants: { w: number; url: string }[]
 }
 
-type Base = { id: string; heading: string }
+export type BoxAlign = 'left' | 'center' | 'right'
+/** Ефект върху снимка (следва формата ѝ, ако фонът е прозрачен). */
+export type ImageFx = { effect?: 'glow' | 'shadow' | 'outline'; effectColor?: string; effectSize?: number }
+/** width (20–100 % от ширината на съдържанието) и align важат само за типовете в SIZABLE (site/box.ts). */
+type Base = { id: string; heading: string; width?: number; align?: BoxAlign }
 export type Item = { title: string; text: string }
 
 export type Block = Base &
   (
-    | { type: 'hero'; text: string; image: number | null; measure: string; ctaLabel: string; ctaUrl: string }
+    | ({ type: 'hero'; text: string; image: number | null; imageSize?: number; measure: string; ctaLabel: string; ctaUrl: string } & ImageFx)
     | { type: 'richtext'; html: string }
-    | { type: 'image'; image: number | null; caption: string }
+    | ({ type: 'image'; image: number | null; caption: string } & ImageFx)
     | { type: 'gallery'; images: number[] }
     | { type: 'logos'; images: number[] }
     | { type: 'downloads'; files: number[] }

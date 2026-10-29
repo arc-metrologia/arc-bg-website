@@ -1,4 +1,4 @@
-import { createElement, type ElementType, type ReactNode } from 'react'
+import { createElement, useState, type ElementType, type ReactNode } from 'react'
 import { useEdit } from './edit-context'
 import Img from './Img'
 import type { Media } from '../types'
@@ -106,5 +106,53 @@ export function AddItem({ onClick, label }: { onClick(): void; label: string }) 
     <button type="button" className="ed-add-item" onClick={onClick}>
       + {label}
     </button>
+  )
+}
+
+/**
+ * Ъглова дръжка за размер на снимка. measure() превръща позицията на мишката в процент
+ * (връща null, ако размерът не важи, напр. на телефон).
+ */
+export function ScaleHandle({ value, min = 20, max = 100, measure, onChange }: {
+  value: number
+  min?: number
+  max?: number
+  measure(x: number, handle: HTMLElement): number | null
+  onChange(v: number): void
+}) {
+  const [drag, setDrag] = useState(false)
+  const clamp = (v: number) => Math.max(min, Math.min(max, Math.round(v / 5) * 5))
+  return (
+    <span
+      className={`ed-scale${drag ? ' on' : ''}`}
+      role="slider"
+      tabIndex={0}
+      aria-label="Размер на снимката"
+      aria-valuemin={min}
+      aria-valuemax={max}
+      aria-valuenow={value}
+      title="Влачете, за да смените размера на снимката"
+      onPointerDown={(e) => {
+        e.preventDefault()
+        e.currentTarget.setPointerCapture(e.pointerId)
+        setDrag(true)
+      }}
+      onPointerMove={(e) => {
+        if (!drag) return
+        const raw = measure(e.clientX, e.currentTarget)
+        if (raw === null) return
+        const v = clamp(raw)
+        if (v !== value) onChange(v)
+      }}
+      onPointerUp={() => setDrag(false)}
+      onKeyDown={(e) => {
+        const d = e.key === 'ArrowRight' || e.key === 'ArrowUp' ? 5 : e.key === 'ArrowLeft' || e.key === 'ArrowDown' ? -5 : 0
+        if (!d) return
+        e.preventDefault()
+        onChange(clamp(value + d))
+      }}
+    >
+      {drag && <b>{value}%</b>}
+    </span>
   )
 }

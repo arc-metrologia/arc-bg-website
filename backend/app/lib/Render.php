@@ -236,7 +236,7 @@ final class Render
         $inner = match ($t) {
             'hero' => self::hero($b, $isH1),
             'richtext' => self::heading($b) . '<div class="prose">' . $b['html'] . '</div>',
-            'image' => '<figure>' . self::img(self::media($b['image']), '(min-width: 1200px) 1100px, 100vw') . ($b['caption'] ? '<figcaption>' . e($b['caption']) . '</figcaption>' : '') . '</figure>',
+            'image' => '<figure' . self::fxAttr($b) . '>' . self::img(self::media($b['image']), '(min-width: 1200px) 1100px, 100vw') . ($b['caption'] ? '<figcaption>' . e($b['caption']) . '</figcaption>' : '') . '</figure>',
             'gallery' => self::heading($b) . '<ul class="gallery">' . implode('', array_map(
                 fn($id) => '<li>' . self::img(self::media($id), '(min-width: 900px) 33vw, 50vw') . '</li>',
                 $b['images']
@@ -277,13 +277,44 @@ final class Render
             }, $b['files'])) . '</ul>',
             default => '',
         };
-        return '<section class="blk blk-' . $t . '"' . '><div class="wrap">' . $inner . '</div></section>';
+        $box = isset($b['width']) ? ' blk-box al-' . e($b['align'] ?? 'left') . '" style="--bw:' . (int)$b['width'] . '%' : '';
+        return '<section class="blk blk-' . $t . $box . '"><div class="wrap">' . $inner . '</div></section>';
+    }
+
+    /** CSS filter за ефекта върху снимка — същият низ като fxFilter в site/box.ts. Стойностите са почистени от Sanitizer::fx. */
+    private static function fx(array $b): string
+    {
+        $c = $b['effectColor'] ?? 'var(--amber)';
+        $s = (int)($b['effectSize'] ?? 24);
+        switch ($b['effect'] ?? '') {
+            case 'glow':
+                return "drop-shadow(0 0 {$s}px $c) drop-shadow(0 0 " . (int)round($s / 2) . "px $c)";
+            case 'shadow':
+                return 'drop-shadow(0 ' . (int)round($s / 3) . "px {$s}px $c)";
+            case 'outline':
+                $o = max(1, (int)round($s / 4));
+                return "drop-shadow({$o}px 0 0 $c) drop-shadow(-{$o}px 0 0 $c) drop-shadow(0 {$o}px 0 $c) drop-shadow(0 -{$o}px 0 $c)";
+        }
+        return '';
+    }
+
+    private static function fxAttr(array $b): string
+    {
+        $f = self::fx($b);
+        return $f ? ' class="fx" style="--fx:' . e($f) . '"' : '';
     }
 
     private static function hero(array $b, bool $isH1): string
     {
         $tag = $isH1 ? 'h1' : 'h2';
-        $o = '<div class="hero-grid"><div class="hero-copy">' . self::heading($b, $tag);
+        // Размер на снимката: под 100 % — по-малка в колоната; над 100 % — по-широка колона (heroGridStyle в site/box.ts).
+        $size = (int)($b['imageSize'] ?? 100);
+        $grid = match (true) {
+            $size > 0 && $size < 100 => ' style="--img:' . $size . '%"',
+            $size > 100 => ' style="--img-col:' . ($size / 100) . 'fr"',
+            default => '',
+        };
+        $o = '<div class="hero-grid"' . $grid . '><div class="hero-copy">' . self::heading($b, $tag);
         if ($b['text']) {
             $o .= '<p>' . e($b['text']) . '</p>';
         }
@@ -293,7 +324,8 @@ final class Render
         $o .= '</div>';
         $m = self::media($b['image']);
         if ($m) {
-            $o .= '<figure class="hero-figure"><div class="dim-frame">' . self::img($m, '(min-width: 900px) 50vw, 100vw', $isH1) . '</div>';
+            $fx = self::fx($b);
+            $o .= '<figure class="hero-figure' . ($fx ? ' fx" style="--fx:' . e($fx) : '') . '"><div class="dim-frame">' . self::img($m, '(min-width: 900px) 50vw, 100vw', $isH1) . '</div>';
             if ($b['measure']) {
                 $o .= '<figcaption class="dim-label">' . e($b['measure']) . '</figcaption>';
             }

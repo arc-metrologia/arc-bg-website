@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { api, upload } from '../api'
 import type { Media } from '../types'
+import RemoveBackground from './RemoveBackground'
 
 const ACCEPT: Record<string, string> = {
   image: 'image/jpeg,image/png,image/webp,image/gif',
@@ -27,6 +28,7 @@ export default function MediaLibrary({ kind, multiple, onSelect, canDelete }: Pr
   const [queue, setQueue] = useState<{ name: string; pct: number; error?: string }[]>([])
   const [query, setQuery] = useState('')
   const [drag, setDrag] = useState(false)
+  const [cutout, setCutout] = useState<Media | null>(null)
   const input = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -154,6 +156,11 @@ export default function MediaLibrary({ kind, multiple, onSelect, canDelete }: Pr
               <button type="button" className="adm-btn" onClick={() => saveMeta(active)}>
                 Запазете описанието
               </button>
+              {active.kind === 'image' && (
+                <button type="button" className="adm-btn" onClick={() => setCutout(active)}>
+                  Премахнете белия фон
+                </button>
+              )}
               <a className="adm-btn" href={active.url} target="_blank" rel="noreferrer">
                 Отвори
               </a>
@@ -166,6 +173,18 @@ export default function MediaLibrary({ kind, multiple, onSelect, canDelete }: Pr
           </aside>
         )}
       </div>
+      {cutout && (
+        <RemoveBackground
+          media={cutout}
+          onClose={() => setCutout(null)}
+          onDone={(m) => {
+            setItems((prev) => [m, ...prev])
+            setActive(m)
+            if (onSelect) setSelected(multiple ? (s) => [...s, m.id] : [m.id])
+            setCutout(null)
+          }}
+        />
+      )}
       {onSelect && (
         <div className="ml-foot">
           <button type="button" className="adm-btn primary" disabled={!selected.length} onClick={() => onSelect(items.filter((m) => selected.includes(m.id)))}>

@@ -12,8 +12,11 @@ final class Sanitizer
         'a' => ['href', 'title', 'target', 'rel'],
         'table' => [], 'thead' => [], 'tbody' => [], 'tr' => [], 'colgroup' => [], 'col' => [],
         'th' => ['colspan', 'rowspan', 'scope'], 'td' => ['colspan', 'rowspan'],
-        'figure' => [], 'figcaption' => [], 'img' => ['src', 'alt', 'width', 'height'],
+        'figure' => [], 'figcaption' => [], 'img' => ['src', 'alt', 'width', 'height', 'data-align'],
     ];
+
+    /** Положение на снимка в текста: wrap-* = текстът я обтича. */
+    private const IMG_ALIGN = ['center', 'right', 'wrap-left', 'wrap-right'];
 
     private const DROP = ['script', 'style', 'iframe', 'object', 'embed', 'svg', 'math', 'form', 'input',
         'button', 'textarea', 'select', 'template', 'noscript', 'link', 'meta', 'base'];
@@ -90,8 +93,26 @@ final class Sanitizer
                 $node->removeChild($c);
                 continue;
             }
-            if ($tag === 'img' && !str_starts_with($c->getAttribute('src'), '/uploads/')) {
-                $node->removeChild($c);
+            if ($tag === 'img') {
+                if (!str_starts_with($c->getAttribute('src'), '/uploads/')) {
+                    $node->removeChild($c);
+                    continue;
+                }
+                foreach (['width', 'height'] as $a) {
+                    if (!$c->hasAttribute($a)) {
+                        continue;
+                    }
+                    // Редакторът връща и дробни пиксели (напр. 63.75).
+                    $v = $c->getAttribute($a);
+                    if (is_numeric($v) && $v >= 1 && $v < 10000) {
+                        $c->setAttribute($a, (string)(int)round((float)$v));
+                    } else {
+                        $c->removeAttribute($a);
+                    }
+                }
+                if ($c->hasAttribute('data-align') && !in_array($c->getAttribute('data-align'), self::IMG_ALIGN, true)) {
+                    $c->removeAttribute('data-align');
+                }
             }
         }
     }
@@ -142,6 +163,9 @@ final class Sanitizer
     public const BLOCK_TYPES = ['hero', 'richtext', 'image', 'gallery', 'video', 'features', 'steps', 'faq',
         'specs', 'cta', 'listing', 'carousel', 'testimonials', 'logos', 'contact', 'downloads', 'placeholder'];
 
+    /** Блокове с променлива ширина и подравняване (същото като SIZABLE в site/box.ts). */
+    public const SIZABLE = ['richtext', 'image', 'video', 'cta'];
+
     /** Нормализира масив от блокове: само познати типове и полета, почистен HTML и URL-и. */
     public static function blocks(mixed $blocks): array
     {
@@ -187,16 +211,22 @@ final class Sanitizer
         $t = $b['type'];
         $id = preg_match('/^[a-z0-9-]{4,40}$/i', (string)($b['id'] ?? '')) ? $b['id'] : bin2hex(random_bytes(6));
         $base = ['id' => $id, 'type' => $t, 'heading' => self::text($b['heading'] ?? '', 300)];
+        $w = (int)($b['width'] ?? 0);
+        if ($w > 0 && in_array($t, self::SIZABLE, true)) {
+            $base['width'] = max(20, min(100, $w));
+            $base['align'] = in_array($b['align'] ?? '', ['left', 'center', 'right'], true) ? $b['align'] : 'left';
+        }
         return $base + match ($t) {
             'hero' => [
                 'text' => self::text($b['text'] ?? '', 1000),
                 'image' => (int)($b['image'] ?? 0) ?: null,
+                'imageSize' => max(20, min(200, (int)($b['imageSize'] ?? 100) ?: 100)),
                 'measure' => self::text($b['measure'] ?? '', 60),
                 'ctaLabel' => self::text($b['ctaLabel'] ?? '', 80),
                 'ctaUrl' => self::url($b['ctaUrl'] ?? ''),
-            ],
+            ] + self::fx($b),
             'richtext' => ['html' => self::html((string)($b['html'] ?? ''))],
-            'image' => ['image' => (int)($b['image'] ?? 0) ?: null, 'caption' => self::text($b['caption'] ?? '', 500)],
+            'image' => ['image' => (int)($b['image'] ?? 0) ?: null, 'caption' => self::text($b['caption'] ?? '', 500)] + self::fx($b),
             'gallery', 'logos' => ['images' => self::ids($b['images'] ?? [])],
             'downloads' => ['files' => self::ids($b['files'] ?? [])],
             'video' => [
@@ -224,5 +254,17 @@ final class Sanitizer
             'contact' => ['text' => self::text($b['text'] ?? '', 1000)],
             'placeholder' => ['note' => self::text($b['note'] ?? '', 1000)],
         };
+    }
+
+    /** Ефект върху снимка: вид, цвят (#rrggbb или цвят от темата) и сила в px. */
+    private static function fx(array $b): array
+    {
+        $e = $b['effect'] ?? '';
+        if (!in_array($e, ['glow', 'shadow', 'outline'], true)) {
+            return [];
+        }
+        $c = strtolower(trim((string)($b['effectColor'] ?? '')));
+        $ok = preg_match('/^#[0-9a-f]{6}$/', $c) || (preg_match('/^var\(--([a-z-]+)\)$/', $c, $m) && in_array($m[1], Render::THEME_VARS, true));
+        return ['effect' => $e, 'effectColor' => $ok ? $c : 'var(--amber)', 'effectSize' => max(2, min(80, (int)($b['effectSize'] ?? 24)))];
     }
 }

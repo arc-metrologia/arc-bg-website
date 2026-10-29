@@ -4,6 +4,7 @@ import { api, ApiError } from '../api'
 import { langFromPath, t } from '../i18n'
 import type { Payload } from '../types'
 import { BlockView } from './Blocks'
+import { boxProps } from './box'
 import { useEdit } from './edit-context'
 import { Text } from './editable'
 import Img from './Img'
@@ -49,7 +50,7 @@ export function PageBody({ payload }: { payload: Payload }) {
   const headImage = !heroFirst && page.type !== 'page' && page.type !== 'category' && page.image ? payload.media[page.image] : undefined
   const blocks = page.blocks.map((b, i) => (b.type === 'placeholder' && !editing ? null :
     <Frame key={b.id} block={b} index={i}>
-      <section className={`blk blk-${b.type}`}>
+      <section {...boxProps(b)}>
         <div className="wrap">
           <BlockView block={b} payload={payload} first={i === firstIdx && heroFirst} set={(patch) => setBlock(b.id, patch)} />
         </div>
