@@ -11,6 +11,7 @@ export interface PageRef {
   title: string
   status: 'draft' | 'published'
   updated_at: string
+  published_at: string | null
   sort_order: number
 }
 

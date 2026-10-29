@@ -81,9 +81,9 @@ export default function Appearance() {
   }
 
   return (
-    <>
+    <div className="wrap-wp">
       <div className="adm-head">
-        <h1>Външен вид</h1>
+        <h1>Цветове на сайта</h1>
         {msg && (
           <span className={msg.startsWith("Не е") ? "adm-error" : "adm-ok"} role="status">
             {msg}
@@ -152,6 +152,6 @@ export default function Appearance() {
           <iframe ref={frame} src="/" title="Преглед на цветовете" onLoad={paint} />
         </section>
       </div>
-    </>
+    </div>
   )
 }

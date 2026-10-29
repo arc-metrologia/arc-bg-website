@@ -9,6 +9,7 @@ import CarouselPages from './CarouselPages'
 import FxControls from './FxControls'
 import MediaLibrary from './MediaLibrary'
 import PageSettings from './PageSettings'
+import Revisions from './Revisions'
 import '../styles/edit.css'
 
 const RichEditorLazy = lazy(() => import('./RichEditor'))
@@ -23,7 +24,27 @@ function RichEditor(props: { html: string; onChange(html: string): void }) {
 
 /** Редакторът е вграден в /admin/pages (iframe): съобщава на админа коя страница е отворена и кога е записана. */
 const EMBED = window.parent !== window && new URLSearchParams(location.search).has('embed')
-const notify = (msg: { type: 'arc-page' | 'arc-saved'; id: number; dirty?: boolean }) => EMBED && window.parent.postMessage(msg, location.origin)
+const notify = (msg: { type: 'arc-page' | 'arc-saved' | 'arc-ready'; id: number; dirty?: boolean }) => EMBED && window.parent.postMessage(msg, location.origin)
+
+/**
+ * Какво редакторът в рамката съобщава на /admin/edit (EditScreen). Без секциите — те остават тук.
+ * seq е номерът на последната приложена промяна от админа; по-стари състояния админът пропуска.
+ */
+export interface EmbedState {
+  type: 'arc-state'
+  seq: number
+  page: Omit<Page, 'blocks'>
+  image: Media | null
+  dirty: boolean
+  saving: boolean
+  msg: { text: string; error?: boolean; t: number } | null
+}
+
+/** Команди от /admin/edit към редактора в рамката. */
+export type EmbedCmd =
+  | { type: 'arc-cmd'; cmd: 'save'; status?: Page['status'] }
+  | { type: 'arc-cmd'; cmd: 'patch'; seq: number; patch: Partial<Page>; media?: Media }
+  | { type: 'arc-cmd'; cmd: 'reload' }
 
 interface Picker {
   kind: Media['kind']
@@ -45,7 +66,7 @@ export default function Editor({ payload, reload, render }: Props) {
   const [extraMedia, setExtraMedia] = useState<Record<number, Media>>({})
   const [dirty, setDirty] = useState(false)
   const [saving, setSaving] = useState(false)
-  const [msg, setMsg] = useState<{ text: string; error?: boolean } | null>(null)
+  const [msg, setMsg] = useState<{ text: string; error?: boolean; t: number } | null>(null)
   const [panel, setPanel] = useState<'settings' | 'revisions' | null>(null)
   const [picker, setPicker] = useState<Picker | null>(null)
   const dirtyRef = useRef(dirty)
@@ -306,24 +327,68 @@ export default function Editor({ payload, reload, render }: Props) {
       notify({ type: 'arc-saved', id: saved.id })
       setDraft(saved)
       await reload()
-      setMsg({ text: status === 'published' ? 'Публикувано.' : status === 'draft' ? 'Скрито — вече е чернова.' : 'Запазено.' })
+      setMsg({ text: status === 'published' ? 'Публикувано.' : status === 'draft' ? 'Скрито — вече е чернова.' : 'Запазено.', t: Date.now() })
     } catch (e) {
-      setMsg({ text: (e as Error).message, error: true })
+      setMsg({ text: (e as Error).message, error: true, t: Date.now() })
     } finally {
       setSaving(false)
     }
   }
   const draftRef = useRef(draft)
   draftRef.current = draft
+  const saveRef = useRef(save)
+  saveRef.current = save
+  const seq = useRef(0)
+
+  // Вграден в /admin/edit: лентата и настройките са в админа, тук остава само страницата.
+  useEffect(() => {
+    if (!EMBED) return
+    notify({ type: 'arc-ready', id: draftRef.current.id })
+    const onMsg = (e: MessageEvent<EmbedCmd>) => {
+      if (e.source !== window.parent || e.origin !== location.origin || e.data?.type !== 'arc-cmd') return
+      const d = e.data
+      if (d.cmd === 'save') saveRef.current(d.status)
+      if (d.cmd === 'reload') location.reload()
+      if (d.cmd === 'patch') {
+        seq.current = d.seq
+        if (d.media) setExtraMedia((m) => ({ ...m, [d.media!.id]: d.media! }))
+        change((p) => ({ ...p, ...d.patch }))
+      }
+    }
+    addEventListener('message', onMsg)
+    return () => removeEventListener('message', onMsg)
+  }, [change])
+
+  // Ctrl+S / Cmd+S записва, както в WordPress.
+  useEffect(() => {
+    const key = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+        e.preventDefault()
+        saveRef.current()
+      }
+    }
+    addEventListener('keydown', key)
+    return () => removeEventListener('keydown', key)
+  }, [])
 
   const can = (p: string) => me?.user?.permissions.includes(p) ?? false
   const view: Payload = { ...payload, page: draft, media: { ...payload.media, ...extraMedia } }
+
+  useEffect(() => {
+    if (!EMBED) return
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { blocks, ...page } = draft
+    const state: EmbedState = { type: 'arc-state', seq: seq.current, page, image: draft.image ? (view.media[draft.image] ?? null) : null, dirty, saving, msg }
+    window.parent.postMessage(state, location.origin)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [draft, dirty, saving, msg, extraMedia])
 
   if (me && me.stage !== 'ok') return <>{render(payload)}</>
 
   return (
     <EditContext.Provider value={api_}>
       {render(view)}
+      {!EMBED && (
       <div className="ed-bar" role="region" aria-label="Редакция на страницата">
         <span className={`ed-status ${draft.status}`}>{draft.status === 'published' ? 'Публикувана' : 'Чернова'}</span>
         <button type="button" className={editing ? 'on' : undefined} onClick={() => setEditing(!editing)}>
@@ -360,8 +425,9 @@ export default function Editor({ payload, reload, render }: Props) {
               Публикувайте
             </button>
           ))}
-        {!EMBED && <a href="/admin">Админ панел</a>}
+        <a href="/admin">Админ панел</a>
       </div>
+      )}
       {panel === 'settings' && (
         <PageSettings page={draft} media={view.media} onChange={(patch) => change((p) => ({ ...p, ...patch }))} pickMedia={pickMedia} onClose={() => setPanel(null)} />
       )}
@@ -398,48 +464,5 @@ export default function Editor({ payload, reload, render }: Props) {
         </div>
       )}
     </EditContext.Provider>
-  )
-}
-
-function Revisions({ pageId, onClose, onRestored }: { pageId: number; onClose(): void; onRestored(): void }) {
-  const [list, setList] = useState<{ id: number; created_at: string; user_name: string | null }[] | null>(null)
-  useEffect(() => {
-    api<typeof list>(`admin/pages/${pageId}/revisions`).then(setList)
-  }, [pageId])
-  return (
-    <aside className="ed-drawer" aria-label="Версии">
-      <div className="ed-modal-head">
-        <h2>Предишни версии</h2>
-        <button type="button" onClick={onClose} aria-label="Затвори">
-          ✕
-        </button>
-      </div>
-      <p className="ed-hint">Всяко записване пази предишното състояние. Възстановяването също се записва като нова версия, така че нищо не се губи.</p>
-      {list === null ? (
-        <p>Зареждане…</p>
-      ) : list.length === 0 ? (
-        <p>Още няма предишни версии.</p>
-      ) : (
-        <ul className="ed-revs">
-          {list.map((r) => (
-            <li key={r.id}>
-              <span>
-                {new Date(r.created_at.replace(' ', 'T')).toLocaleString('bg-BG')} · {r.user_name ?? 'системата'}
-              </span>
-              <button
-                type="button"
-                onClick={async () => {
-                  if (!confirm('Да възстановя ли тази версия? Текущото съдържание ще бъде запазено като версия.')) return
-                  await api(`admin/revisions/${r.id}/restore`, { method: 'POST' })
-                  onRestored()
-                }}
-              >
-                Възстановете
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
-    </aside>
   )
 }

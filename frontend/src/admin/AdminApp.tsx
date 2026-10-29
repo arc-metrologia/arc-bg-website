@@ -1,12 +1,17 @@
 import { useEffect, useState } from 'react'
-import { NavLink, Navigate, Route, Routes, useLocation } from 'react-router-dom'
+import { NavLink, Navigate, Route, Routes, useLocation, useParams } from 'react-router-dom'
 import QRCode from 'qrcode'
 import { api, me as fetchMe } from '../api'
 import type { Me } from '../types'
 import MediaLibrary from '../edit/MediaLibrary'
-import { Account, Audit, Comparator, ContentList, Messages, Settings, Users } from './pages'
-import PageEditor from './PageEditor'
+import { Account, Audit, Company, Comparator, Menus, Messages, NewPage, Redirects, Users } from './pages'
 import Appearance from './Appearance'
+import ContentTable from './ContentTable'
+import Dashboard from './Dashboard'
+import EditScreen from './EditScreen'
+import Icon, { type IconName } from './icons'
+import { KINDS, type Kind } from './kinds'
+import { useScheme } from './scheme'
 import '../styles/admin.css'
 
 export default function AdminApp() {
@@ -240,78 +245,251 @@ function Setup({ onDone }: { onDone(): void }) {
 
 const ROLE_LABEL = { admin: 'Администратор', editor: 'Редактор', author: 'Автор' }
 
+interface MenuItem {
+  to: string
+  label: string
+  icon: IconName
+  show: boolean
+  /** Други адреси, при които точката е отворена (напр. /admin/new/posts за „Новини“). */
+  match?: string[]
+  sub?: { to: string; label: string; show?: boolean }[]
+}
+
+/** Рамката на админа като в WordPress: горна лента, тъмно меню вляво, съдържанието вдясно. */
 function Shell({ me }: { me: Me }) {
   const u = me.user!
   const can = (p: string) => u.permissions.includes(p)
-  const full = useLocation().pathname.startsWith('/admin/pages')
-  const links = [
-    { to: 'pages', label: 'Страници', show: can('posts') },
-    { to: 'content', label: 'Списък на съдържанието', show: can('posts') },
-    { to: 'media', label: 'Медия', show: can('media') },
-    { to: 'messages', label: 'Запитвания', show: can('messages') },
-    { to: 'settings', label: 'Фирма и меню', show: can('settings') },
-    { to: 'appearance', label: 'Външен вид', show: can('settings') },
-    { to: 'comparator', label: 'Сравнител', show: can('content') },
-    { to: 'users', label: 'Потребители', show: can('users') },
-    { to: 'audit', label: 'Дневник', show: can('audit') },
-    { to: 'account', label: 'Моят профил', show: true },
+  const { pathname } = useLocation()
+  const [scheme] = useScheme(u.id)
+  const [folded, setFolded] = useState(() => {
+    try {
+      return localStorage.getItem('arc-admin-folded') === '1'
+    } catch {
+      return false
+    }
+  })
+  const [mobileOpen, setMobileOpen] = useState(false)
+  const [newOpen, setNewOpen] = useState(false)
+  useEffect(() => {
+    setMobileOpen(false)
+    setNewOpen(false)
+  }, [pathname])
+
+  const kindMenu = (k: Kind, icon: IconName): MenuItem => ({
+    to: `content/${k}`,
+    label: KINDS[k].label,
+    icon,
+    show: can(KINDS[k].perm),
+    match: [`new/${k}`],
+    sub: [
+      { to: `content/${k}`, label: KINDS[k].all },
+      { to: `new/${k}`, label: KINDS[k].add },
+    ],
+  })
+  const menu: MenuItem[] = [
+    { to: 'dashboard', label: 'Табло', icon: 'dashboard', show: true },
+    kindMenu('posts', 'posts'),
+    kindMenu('products', 'products'),
+    kindMenu('services', 'services'),
+    kindMenu('pages', 'pages'),
+    { to: 'media', label: 'Медия', icon: 'media', show: can('media') },
+    { to: 'messages', label: 'Запитвания', icon: 'messages', show: can('messages') },
+    {
+      to: 'menus',
+      label: 'Външен вид',
+      icon: 'appearance',
+      show: can('settings'),
+      match: ['appearance'],
+      sub: [
+        { to: 'menus', label: 'Меню' },
+        { to: 'appearance', label: 'Цветове на сайта' },
+      ],
+    },
+    {
+      to: can('users') ? 'users' : 'account',
+      label: can('users') ? 'Потребители' : 'Профил',
+      icon: 'users',
+      show: true,
+      match: ['account'],
+      sub: can('users')
+        ? [
+            { to: 'users', label: 'Всички потребители' },
+            { to: 'account', label: 'Профил' },
+          ]
+        : undefined,
+    },
+    {
+      to: can('content') ? 'comparator' : 'audit',
+      label: 'Инструменти',
+      icon: 'tools',
+      show: can('content') || can('audit'),
+      match: ['audit'],
+      sub: [
+        { to: 'comparator', label: 'Сравнител', show: can('content') },
+        { to: 'audit', label: 'Дневник', show: can('audit') },
+      ],
+    },
+    {
+      to: 'settings',
+      label: 'Настройки',
+      icon: 'settings',
+      show: can('settings'),
+      match: ['redirects'],
+      sub: [
+        { to: 'settings', label: 'Данни за фирмата' },
+        { to: 'redirects', label: 'Пренасочвания' },
+      ],
+    },
   ]
-  return (
-    <div className="adm">
-      <aside className="adm-side">
-        <a href="/" className="adm-brand">
-          <img src="/logo-arc-white.svg" alt="" width={60} height={32} />
-          <span>Към сайта</span>
-        </a>
-        <nav aria-label="Администрация">
-          {links
-            .filter((l) => l.show)
-            .map((l) => (
-              <NavLink key={l.to} to={`/admin/${l.to}`}>
-                {l.label}
-              </NavLink>
-            ))}
-        </nav>
-        <div className="adm-user">
-          <strong>{u.name}</strong>
-          <span>{ROLE_LABEL[u.role]}</span>
-          <button
-            type="button"
-            className="adm-link"
-            onClick={async () => {
-              await api('auth/logout', { method: 'POST' })
-              location.href = '/admin'
-            }}
-          >
-            Изход
-          </button>
-        </div>
-      </aside>
-      <main className={`adm-main${full ? ' full' : ''}`}>
+  const here = pathname.replace(/^\/admin\/?/, '')
+  const isOn = (to: string) => here === to || here.startsWith(to + '/')
+  const isOpen = (m: MenuItem) => isOn(m.to) || (m.match ?? []).some(isOn) || (m.sub ?? []).some((s) => isOn(s.to))
+
+  // Редакторът е на цял екран, както в новия WordPress.
+  if (here.startsWith('edit/'))
+    return (
+      <div className={`wp scheme-${scheme}`}>
         <Routes>
-          <Route index element={<Navigate to="/admin/pages" replace />} />
-          <Route path="pages" element={<PageEditor me={me} />} />
-          <Route path="pages/:id" element={<PageEditor me={me} />} />
-          <Route path="appearance" element={<Appearance />} />
-          <Route path="content" element={<ContentList me={me} />} />
+          <Route path="edit/:id" element={<EditScreen me={me} />} />
+        </Routes>
+      </div>
+    )
+
+  const toggleFold = () => {
+    setFolded(!folded)
+    try {
+      localStorage.setItem('arc-admin-folded', folded ? '0' : '1')
+    } catch {
+      /* само за тази сесия */
+    }
+  }
+  const addables = (Object.keys(KINDS) as Kind[]).filter((k) => can(KINDS[k].perm))
+
+  return (
+    <div className={`wp scheme-${scheme}${folded ? ' folded' : ''}${mobileOpen ? ' menu-open' : ''}`}>
+      <header className="wp-adminbar">
+        <button type="button" className="wp-adminbar-menu" aria-label="Меню" aria-expanded={mobileOpen} onClick={() => setMobileOpen(!mobileOpen)}>
+          <Icon name="menu" />
+        </button>
+        <a href="/" className="wp-adminbar-site">
+          <Icon name="site" />
+          <span>АРК Метрология</span>
+        </a>
+        <div className="wp-adminbar-new">
+          <button type="button" aria-expanded={newOpen} onClick={() => setNewOpen(!newOpen)}>
+            <Icon name="plus" />
+            <span>Нов</span>
+          </button>
+          {newOpen && (
+            <ul onMouseLeave={() => setNewOpen(false)}>
+              {addables.map((k) => (
+                <li key={k}>
+                  <NavLink to={`/admin/new/${k}`}>{KINDS[k].add.replace(/^Добавяне на /, '').replace(/^./, (c) => c.toUpperCase())}</NavLink>
+                </li>
+              ))}
+              {can('media') && (
+                <li>
+                  <NavLink to="/admin/media">Медия</NavLink>
+                </li>
+              )}
+            </ul>
+          )}
+        </div>
+        <div className="wp-adminbar-user">
+          <span>
+            Здравейте, <strong>{u.name}</strong>
+          </span>
+          <ul>
+            <li className="wp-adminbar-role">{ROLE_LABEL[u.role]}</li>
+            <li>
+              <NavLink to="/admin/account">Профил</NavLink>
+            </li>
+            <li>
+              <button
+                type="button"
+                onClick={async () => {
+                  await api('auth/logout', { method: 'POST' })
+                  location.href = '/admin'
+                }}
+              >
+                Изход
+              </button>
+            </li>
+          </ul>
+        </div>
+      </header>
+
+      <nav className="wp-menu" aria-label="Администрация">
+        <ul>
+          {menu
+            .filter((m) => m.show)
+            .map((m) => {
+              const open = isOpen(m)
+              const subs = (m.sub ?? []).filter((s) => s.show !== false)
+              return (
+                <li key={m.label} className={`${open ? 'current' : ''}${subs.length ? ' has-sub' : ''}`}>
+                  <NavLink to={`/admin/${m.to}`} className="wp-menu-top" aria-current={open ? 'page' : undefined} title={folded ? m.label : undefined}>
+                    <Icon name={m.icon} />
+                    <span className="wp-menu-name">{m.label}</span>
+                  </NavLink>
+                  {subs.length > 0 && (
+                    <ul className="wp-submenu">
+                      <li className="wp-submenu-head">{m.label}</li>
+                      {subs.map((s) => (
+                        <li key={s.to}>
+                          <NavLink to={`/admin/${s.to}`} end>
+                            {s.label}
+                          </NavLink>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </li>
+              )
+            })}
+        </ul>
+        <button type="button" className="wp-menu-fold" onClick={toggleFold} aria-pressed={folded}>
+          <Icon name="collapse" />
+          <span className="wp-menu-name">{folded ? 'Разгъване на менюто' : 'Свиване на менюто'}</span>
+        </button>
+      </nav>
+
+      <main className={`wp-body${here.startsWith('comparator') ? ' full' : ''}`}>
+        <Routes>
+          <Route index element={<Navigate to="/admin/dashboard" replace />} />
+          <Route path="dashboard" element={<Dashboard me={me} />} />
+          <Route path="content/:kind" element={<ContentTable me={me} />} />
+          <Route path="new/:kind" element={<NewPage key={pathname} me={me} />} />
+          {/* стари адреси от предишния админ */}
+          <Route path="pages/:id" element={<RedirectEdit />} />
+          <Route path="pages" element={<Navigate to="/admin/content/pages" replace />} />
+          <Route path="content" element={<Navigate to="/admin/content/pages" replace />} />
           <Route
             path="media"
             element={
-              <>
-                <h1>Медийна библиотека</h1>
+              <div className="wrap-wp">
+                <h1>Медия</h1>
                 <MediaLibrary canDelete={can('publish')} />
-              </>
+              </div>
             }
           />
           <Route path="messages" element={<Messages />} />
-          <Route path="settings" element={<Settings />} />
+          <Route path="menus" element={<Menus />} />
+          <Route path="appearance" element={<Appearance />} />
+          <Route path="settings" element={<Company />} />
+          <Route path="redirects" element={<Redirects />} />
           <Route path="comparator" element={<Comparator />} />
           <Route path="users" element={<Users me={me} />} />
           <Route path="audit" element={<Audit />} />
-          <Route path="account" element={<Account />} />
-          <Route path="*" element={<Navigate to="/admin/pages" replace />} />
+          <Route path="account" element={<Account me={me} />} />
+          <Route path="*" element={<Navigate to="/admin/dashboard" replace />} />
         </Routes>
       </main>
+      <div className="wp-menu-backdrop" onClick={() => setMobileOpen(false)} />
     </div>
   )
+}
+
+function RedirectEdit() {
+  return <Navigate to={`/admin/edit/${useParams().id}`} replace />
 }

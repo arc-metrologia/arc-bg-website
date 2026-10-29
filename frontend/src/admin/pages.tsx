@@ -1,20 +1,11 @@
 import { useEffect, useState } from 'react'
 import { api, slugify } from '../api'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { TEMPLATES, TYPE_LABELS } from '../edit/blockDefs'
 import PageLinkInput, { loadPages, usePages } from '../edit/PageLinkInput'
 import type { Me, NavItem, PageType, SiteInfo } from '../types'
-
-interface Row {
-  id: number
-  type: PageType
-  lang: 'bg' | 'en'
-  path: string
-  url: string
-  title: string
-  status: 'draft' | 'published'
-  updated_at: string
-}
+import { KINDS, type Kind } from './kinds'
+import { SCHEMES, useScheme } from './scheme'
 
 const fmt = (d: string | null) => (d ? new Date(d.replace(' ', 'T')).toLocaleString('bg-BG', { dateStyle: 'short', timeStyle: 'short' }) : '—')
 
@@ -23,13 +14,19 @@ const PREFIX: Record<string, Record<PageType, string>> = {
   en: { product: 'products/', service: 'services/', post: 'blog/', category: '', page: '' },
 }
 
-export function NewPage({ me, onCancel, parent: initialParent = '', lang: initialLang = 'bg' }: { me: Me; onCancel(): void; parent?: string; lang?: 'bg' | 'en' }) {
+/** „Добавяне на …“: заглавие, шаблон и място в структурата; после се отваря редакторът. */
+export function NewPage({ me }: { me: Me }) {
   const canAll = me.user!.permissions.includes('content')
   const navigate = useNavigate()
-  const [type, setType] = useState<PageType>(canAll ? (initialParent.startsWith('blog') ? 'post' : 'page') : 'post')
-  const [template, setTemplate] = useState(canAll ? 'blank' : 'post')
-  const [lang, setLang] = useState<'bg' | 'en'>(initialLang)
-  const [parent, setParent] = useState(initialParent)
+  const [params] = useSearchParams()
+  const asked = useParams().kind as Kind
+  const kind: Kind = !canAll ? 'posts' : asked in KINDS ? asked : 'pages'
+  const k = KINDS[kind]
+  const tpl = TEMPLATES.find((t) => t.key === k.template) ?? TEMPLATES[0]
+  const [type, setType] = useState<PageType>(tpl.type)
+  const [template, setTemplate] = useState(tpl.key)
+  const [lang, setLang] = useState<'bg' | 'en'>(params.get('lang') === 'en' ? 'en' : 'bg')
+  const [parent, setParent] = useState(params.get('parent') ?? '')
   const [title, setTitle] = useState('')
   const [path, setPath] = useState('')
   const [touched, setTouched] = useState(false)
@@ -44,18 +41,23 @@ export function NewPage({ me, onCancel, parent: initialParent = '', lang: initia
     try {
       const page = await api<{ id: number }>('admin/pages', { body: { type, lang, title, path: touched ? path : auto, blocks, status: 'draft' } })
       loadPages(true)
-      navigate(`/admin/pages/${page.id}`)
+      navigate(`/admin/edit/${page.id}`)
     } catch (err) {
       setError((err as Error).message)
     }
   }
 
   return (
+    <div className="wrap-wp">
+      <h1>{k.add}</h1>
     <form className="adm-card adm-form adm-new" onSubmit={create}>
-      <h2>Нова страница</h2>
+      <label className="wp-title-field">
+        <span className="screen-reader-text">Заглавие</span>
+        <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Въведете заглавие" required autoFocus />
+      </label>
       <div className="adm-grid">
         <label>
-          Тип
+          Вид
           <select value={type} onChange={(e) => setType(e.target.value as PageType)} disabled={!canAll}>
             {Object.entries(TYPE_LABELS).map(([k, v]) => (
               <option key={k} value={k}>
@@ -108,10 +110,6 @@ export function NewPage({ me, onCancel, parent: initialParent = '', lang: initia
         </label>
       )}
       <label>
-        Заглавие
-        <input value={title} onChange={(e) => setTitle(e.target.value)} required autoFocus />
-      </label>
-      <label>
         Адрес
         <span className="adm-path">
           <span>{lang === 'bg' ? '/' : '/en/'}</span>
@@ -126,110 +124,14 @@ export function NewPage({ me, onCancel, parent: initialParent = '', lang: initia
       </label>
       {error && <p className="adm-error" role="alert">{error}</p>}
       <div className="adm-row">
-        <button className="adm-btn primary">Създайте и отворете в редактора</button>
-        <button type="button" className="adm-btn" onClick={onCancel}>
+        <button className="adm-btn primary">Създаване и редактиране</button>
+        <button type="button" className="adm-btn" onClick={() => navigate(-1)}>
           Отказ
         </button>
       </div>
-      <p className="adm-muted">Страницата се създава като чернова — вижда се само от редакторите, докато не я публикувате.</p>
+      <p className="adm-muted">Създава се като чернова. Посетителите я виждат, след като натиснете „Публикуване“ в редактора.</p>
     </form>
-  )
-}
-
-export function ContentList({ me }: { me: Me }) {
-  const [rows, setRows] = useState<Row[]>([])
-  const [type, setType] = useState<PageType | ''>('')
-  const [lang, setLang] = useState('')
-  const [q, setQ] = useState('')
-  const [creating, setCreating] = useState(false)
-  const canDelete = me.user!.permissions.includes('publish')
-  const load = () => api<Row[]>(`admin/pages?type=${type}&lang=${lang}`).then(setRows)
-  useEffect(() => {
-    load()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [type, lang])
-  const shown = rows.filter((r) => !q || `${r.title} ${r.url}`.toLowerCase().includes(q.toLowerCase()))
-  return (
-    <>
-      <div className="adm-head">
-        <h1>Съдържание</h1>
-        <button type="button" className="adm-btn primary" onClick={() => setCreating(true)}>
-          Нова страница
-        </button>
-      </div>
-      {creating && <NewPage me={me} onCancel={() => setCreating(false)} />}
-      <div className="adm-filters">
-        <div className="adm-tabs" role="tablist">
-          {[['', 'Всички'], ...Object.entries(TYPE_LABELS)].map(([k, v]) => (
-            <button key={k} type="button" role="tab" aria-selected={type === k} onClick={() => setType(k as PageType)}>
-              {v}
-            </button>
-          ))}
-        </div>
-        <select value={lang} onChange={(e) => setLang(e.target.value)} aria-label="Език">
-          <option value="">BG и EN</option>
-          <option value="bg">Български</option>
-          <option value="en">English</option>
-        </select>
-        <input type="search" placeholder="Търсене" value={q} onChange={(e) => setQ(e.target.value)} />
-      </div>
-      <table className="adm-table">
-        <thead>
-          <tr>
-            <th>Заглавие</th>
-            <th>Тип</th>
-            <th>Състояние</th>
-            <th>Последна промяна</th>
-            <th />
-          </tr>
-        </thead>
-        <tbody>
-          {shown.map((r) => (
-            <tr key={r.id}>
-              <td>
-                <Link to={`/admin/pages/${r.id}`} className="adm-title">
-                  {r.title}
-                </Link>
-                <span className="adm-url">
-                  {r.lang.toUpperCase()} · {r.url}
-                </span>
-              </td>
-              <td>{TYPE_LABELS[r.type]}</td>
-              <td>
-                <span className={`adm-badge ${r.status}`}>{r.status === 'published' ? 'Публикувана' : 'Чернова'}</span>
-              </td>
-              <td>{fmt(r.updated_at)}</td>
-              <td className="adm-actions">
-                <Link to={`/admin/pages/${r.id}`} className="adm-btn small">
-                  Редактирайте
-                </Link>
-                <a href={r.url} className="adm-btn small" target="_blank" rel="noopener">
-                  Вижте
-                </a>
-                {canDelete && r.path !== '' && (
-                  <button
-                    type="button"
-                    className="adm-btn small danger"
-                    onClick={async () => {
-                      if (!confirm(`Да изтрия ли „${r.title}“ окончателно? Ако страницата е индексирана, добавете пренасочване.`)) return
-                      try {
-                        await api(`admin/pages/${r.id}`, { method: 'DELETE' })
-                        loadPages(true)
-                        load()
-                      } catch (e) {
-                        alert(`Страницата не е изтрита: ${(e as Error).message}`)
-                      }
-                    }}
-                  >
-                    Изтрийте
-                  </button>
-                )}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </>
+    </div>
   )
 }
 
@@ -239,8 +141,8 @@ export function Messages() {
     api<Record<string, string>[]>('admin/messages').then(setRows)
   }, [])
   return (
-    <>
-      <h1>Запитвания от сайта</h1>
+    <div className="wrap-wp">
+      <h1>Запитвания</h1>
       {rows?.length === 0 && <p className="adm-muted">Още няма запитвания. Те идват от формата за контакт и се изпращат и по имейл.</p>}
       <div className="adm-messages">
         {rows?.map((m) => (
@@ -256,7 +158,7 @@ export function Messages() {
           </article>
         ))}
       </div>
-    </>
+    </div>
   )
 }
 
@@ -309,37 +211,44 @@ function NavEditor({ items, onChange, lang }: { items: NavItem[]; onChange(i: Na
   )
 }
 
-export function Settings() {
-  const [site, setSite] = useState<SiteInfo | null>(null)
-  const [nav, setNav] = useState<Record<'bg' | 'en', NavItem[]>>({ bg: [], en: [] })
-  const [navLang, setNavLang] = useState<'bg' | 'en'>('bg')
-  const [redirects, setRedirects] = useState('')
+/** Общото за трите екрана с настройки: съобщение за запис или грешка в заглавния ред. */
+function useSaver() {
   const [msg, setMsg] = useState('')
-  useEffect(() => {
-    api<SiteInfo>('admin/settings/site').then(setSite)
-    Promise.all([api<NavItem[]>('admin/settings/nav_bg'), api<NavItem[]>('admin/settings/nav_en')]).then(([bg, en]) => setNav({ bg: bg ?? [], en: en ?? [] }))
-    api<Record<string, string>>('admin/settings/redirects').then((r) =>
-      setRedirects(
-        Object.entries(r ?? {})
-          .map(([a, b]) => `${a} ${b}`)
-          .join('\n'),
-      ),
-    )
-  }, [])
   const [error, setError] = useState('')
-  const flash = (m: string) => {
-    setMsg(m)
-    setTimeout(() => setMsg(''), 3000)
-  }
   const saveWith = async (fn: () => Promise<unknown>, ok: string) => {
     setError('')
+    setMsg('')
     try {
       await fn()
-      flash(ok)
+      setMsg(ok)
+      setTimeout(() => setMsg(''), 4000)
     } catch (e) {
       setError((e as Error).message)
     }
   }
+  const notice = (
+    <>
+      {msg && (
+        <div className="wp-notice success" role="status">
+          <p>{msg}</p>
+        </div>
+      )}
+      {error && (
+        <div className="wp-notice error" role="alert">
+          <p>Не е запазено: {error}</p>
+        </div>
+      )}
+    </>
+  )
+  return { saveWith, notice }
+}
+
+export function Company() {
+  const [site, setSite] = useState<SiteInfo | null>(null)
+  const { saveWith, notice } = useSaver()
+  useEffect(() => {
+    api<SiteInfo>('admin/settings/site').then(setSite)
+  }, [])
   if (!site) return <p>Зареждане…</p>
   const field = (label: string, key: string, sub?: 'bg' | 'en', area = false) => {
     const value = (sub ? (site[key] as Record<string, string>)?.[sub] : (site[key] as string)) ?? ''
@@ -352,18 +261,10 @@ export function Settings() {
     )
   }
   return (
-    <>
-      <div className="adm-head">
-        <h1>Фирма и меню</h1>
-        {msg && <span className="adm-ok" role="status">{msg}</span>}
-        {error && (
-          <span className="adm-error" role="alert">
-            Не е запазено: {error}
-          </span>
-        )}
-      </div>
+    <div className="wrap-wp">
+      <h1>Данни за фирмата</h1>
+      {notice}
       <section className="adm-card adm-form">
-        <h2>Данни за фирмата</h2>
         <p className="adm-muted">Използват се в хедъра, футъра, контактите и в структурираните данни за Google и AI асистентите.</p>
         <div className="adm-grid">
           {field('Име (BG)', 'name')}
@@ -378,16 +279,30 @@ export function Settings() {
         </div>
         {field('Описание на фирмата (BG) — за Google и AI', 'description', 'bg', true)}
         {field('Описание на фирмата (EN)', 'description', 'en', true)}
-        <button
-          type="button"
-          className="adm-btn primary"
-          onClick={() => saveWith(() => api('admin/settings/site', { method: 'PUT', body: site }), 'Данните са запазени.')}
-        >
-          Запазете данните
-        </button>
+        <div>
+          <button type="button" className="adm-btn primary" onClick={() => saveWith(() => api('admin/settings/site', { method: 'PUT', body: site }), 'Данните са запазени.')}>
+            Запазване на промените
+          </button>
+        </div>
       </section>
+    </div>
+  )
+}
+
+export function Menus() {
+  const [nav, setNav] = useState<Record<'bg' | 'en', NavItem[]> | null>(null)
+  const [navLang, setNavLang] = useState<'bg' | 'en'>('bg')
+  const { saveWith, notice } = useSaver()
+  useEffect(() => {
+    Promise.all([api<NavItem[]>('admin/settings/nav_bg'), api<NavItem[]>('admin/settings/nav_en')]).then(([bg, en]) => setNav({ bg: bg ?? [], en: en ?? [] }))
+  }, [])
+  if (!nav) return <p>Зареждане…</p>
+  return (
+    <div className="wrap-wp">
+      <h1>Меню</h1>
+      {notice}
       <section className="adm-card">
-        <h2>Главно меню</h2>
+        <p className="adm-muted">Главното меню в горната част на сайта. Изберете страница от списъка или въведете външен адрес; с „+ подменю“ се прави падащо меню.</p>
         <div className="adm-tabs" role="tablist" aria-label="Език на менюто">
           {(['bg', 'en'] as const).map((l) => (
             <button key={l} type="button" role="tab" aria-selected={navLang === l} onClick={() => setNavLang(l)}>
@@ -401,29 +316,51 @@ export function Settings() {
           className="adm-btn primary"
           onClick={() => saveWith(() => api(`admin/settings/nav_${navLang}`, { method: 'PUT', body: nav[navLang] }), 'Менюто е запазено.')}
         >
-          Запазете менюто
+          Запазване на менюто
         </button>
       </section>
+    </div>
+  )
+}
+
+export function Redirects() {
+  const [redirects, setRedirects] = useState<string | null>(null)
+  const { saveWith, notice } = useSaver()
+  useEffect(() => {
+    api<Record<string, string>>('admin/settings/redirects').then((r) =>
+      setRedirects(
+        Object.entries(r ?? {})
+          .map(([a, b]) => `${a} ${b}`)
+          .join('\n'),
+      ),
+    )
+  }, [])
+  if (redirects === null) return <p>Зареждане…</p>
+  return (
+    <div className="wrap-wp">
+      <h1>Пренасочвания</h1>
+      {notice}
       <section className="adm-card adm-form">
-        <h2>Пренасочвания (301)</h2>
         <p className="adm-muted">По един ред: стар адрес, интервал, нов адрес. Пазят позициите в Google, когато адрес се смени или страница се изтрие.</p>
-        <textarea className="adm-mono" rows={12} value={redirects} onChange={(e) => setRedirects(e.target.value)} />
-        <button
-          type="button"
-          className="adm-btn primary"
-          onClick={() => {
-            const map: Record<string, string> = {}
-            for (const line of redirects.split('\n')) {
-              const [from, to] = line.trim().split(/\s+/)
-              if (from && to) map[from] = to
-            }
-            saveWith(() => api('admin/settings/redirects', { method: 'PUT', body: map }), 'Пренасочванията са запазени.')
-          }}
-        >
-          Запазете пренасочванията
-        </button>
+        <textarea className="adm-mono" rows={14} value={redirects} onChange={(e) => setRedirects(e.target.value)} aria-label="Пренасочвания" />
+        <div>
+          <button
+            type="button"
+            className="adm-btn primary"
+            onClick={() => {
+              const map: Record<string, string> = {}
+              for (const line of redirects.split('\n')) {
+                const [from, to] = line.trim().split(/\s+/)
+                if (from && to) map[from] = to
+              }
+              saveWith(() => api('admin/settings/redirects', { method: 'PUT', body: map }), 'Пренасочванията са запазени.')
+            }}
+          >
+            Запазване на пренасочванията
+          </button>
+        </div>
       </section>
-    </>
+    </div>
   )
 }
 
@@ -435,13 +372,13 @@ export function Comparator() {
   if (url === null) return <p>Зареждане…</p>
   if (!url)
     return (
-      <>
+      <div className="wrap-wp">
         <h1>Сравнител на машини</h1>
         <p className="adm-muted">Сравнителят не е настроен. Добавете адреса му като comparator_url в конфигурационния файл на сървъра.</p>
-      </>
+      </div>
     )
   return (
-    <div className="adm-comparator">
+    <div className="wrap-wp adm-comparator">
       <div className="adm-head">
         <h1>Сравнител на машини</h1>
         <a className="adm-btn" href={url} target="_blank" rel="noreferrer">
@@ -487,7 +424,7 @@ export function Users({ me }: { me: Me }) {
     }
   }
   return (
-    <>
+    <div className="wrap-wp">
       <h1>Потребители</h1>
       <table className="adm-table">
         <thead>
@@ -535,7 +472,7 @@ export function Users({ me }: { me: Me }) {
       </table>
       {error && <p className="adm-error">{error}</p>}
       <NewUser onDone={load} />
-    </>
+    </div>
   )
 }
 
@@ -597,8 +534,8 @@ export function Audit() {
     api<Record<string, string>[]>('admin/audit').then(setRows)
   }, [])
   return (
-    <>
-      <h1>Дневник на действията</h1>
+    <div className="wrap-wp">
+      <h1>Дневник</h1>
       <table className="adm-table compact">
         <thead>
           <tr>
@@ -621,17 +558,36 @@ export function Audit() {
           ))}
         </tbody>
       </table>
-    </>
+    </div>
   )
 }
 
-export function Account() {
+export function Account({ me }: { me: Me }) {
   const [msg, setMsg] = useState('')
   const [error, setError] = useState('')
   const [codes, setCodes] = useState<string[] | null>(null)
+  const [scheme, setScheme] = useScheme(me.user!.id)
   return (
-    <>
-      <h1>Моят профил</h1>
+    <div className="wrap-wp">
+      <h1>Профил</h1>
+      <section className="adm-card">
+        <h2>Цветова схема на админ панела</h2>
+        <div className="wp-schemes" role="radiogroup" aria-label="Цветова схема">
+          {SCHEMES.map((sc) => (
+            <label key={sc.key} className={scheme === sc.key ? 'on' : undefined}>
+              <input type="radio" name="scheme" checked={scheme === sc.key} onChange={() => setScheme(sc.key)} />
+              <strong>{sc.label}</strong>
+              <span className="wp-scheme-sw">
+                {sc.swatches.map((c) => (
+                  <i key={c} style={{ background: c }} />
+                ))}
+              </span>
+              <small>{sc.hint}</small>
+            </label>
+          ))}
+        </div>
+        <p className="adm-muted">Изборът важи само за вас и само в този браузър. Сайтът за посетителите не се променя.</p>
+      </section>
       <form
         className="adm-card adm-form"
         onSubmit={async (e) => {
@@ -691,6 +647,6 @@ export function Account() {
           </button>
         )}
       </section>
-    </>
+    </div>
   )
 }

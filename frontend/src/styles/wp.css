@@ -1,0 +1,1378 @@
+/*
+ * Админ панел в стила на WordPress: горна лента 32 px, тъмно меню 160 px, светлосиво работно поле,
+ * бели панели с рамка #c3c4c7, таблици с редуващи се редове. Цветовете идват от схемата (Профил).
+ * Правилата са под .wp, за да надделяват над общите .adm-* стилове.
+ */
+
+.scheme-wp {
+  --wp-bar: #1d2327;
+  --wp-bar-text: #f0f0f1;
+  --wp-bar-hover: #72aee6;
+  --wp-menu: #1d2327;
+  --wp-menu-text: #f0f0f1;
+  --wp-menu-icon: #a7aaad;
+  --wp-menu-hover-bg: #2c3338;
+  --wp-menu-hover-text: #72aee6;
+  --wp-current: #2271b1;
+  --wp-current-text: #fff;
+  --wp-sub: #2c3338;
+  --wp-sub-text: rgba(240, 246, 252, 0.7);
+  --wp-sub-current: #fff;
+  --wp-accent: #2271b1;
+  --wp-accent-hover: #135e96;
+  --wp-accent-text: #fff;
+  --wp-link: #2271b1;
+  --wp-bg: #f0f0f1;
+}
+
+.scheme-arc {
+  --wp-bar: #032a41;
+  --wp-bar-text: #e6eef2;
+  --wp-bar-hover: #f0b323;
+  --wp-menu: #053a59;
+  --wp-menu-text: #e6eef2;
+  --wp-menu-icon: #9fbccc;
+  --wp-menu-hover-bg: #032a41;
+  --wp-menu-hover-text: #f0b323;
+  --wp-current: #f0b323;
+  --wp-current-text: #2b2000;
+  --wp-sub: #032a41;
+  --wp-sub-text: rgba(230, 238, 242, 0.78);
+  --wp-sub-current: #f0b323;
+  --wp-accent: #053a59;
+  --wp-accent-hover: #032a41;
+  --wp-accent-text: #fff;
+  --wp-link: #0a5a85;
+  --wp-bg: #eef2f4;
+}
+
+.wp {
+  --wp-text: #1d2327;
+  --wp-muted: #646970;
+  --wp-border: #c3c4c7;
+  --wp-input: #8c8f94;
+  --wp-red: #b32d2e;
+  --wp-font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen-Sans, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif;
+  min-height: 100vh;
+  background: var(--wp-bg);
+  color: var(--wp-text);
+  font: 400 14px/1.5 var(--wp-font);
+}
+
+.wp :is(h1, h2, h3) {
+  font-family: var(--wp-font);
+  letter-spacing: normal;
+  text-transform: none;
+  color: var(--wp-text);
+}
+
+.wp a {
+  color: var(--wp-link);
+}
+
+.wp a:hover {
+  color: var(--wp-accent-hover);
+}
+
+.wp :focus-visible {
+  outline: 2px solid var(--wp-accent);
+  outline-offset: 1px;
+}
+
+.wp .wp-icon {
+  flex: none;
+}
+
+.screen-reader-text {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* ------------------------------------------------------------ горна лента */
+
+.wp-adminbar {
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: 50;
+  display: flex;
+  align-items: stretch;
+  height: 32px;
+  background: var(--wp-bar);
+  color: var(--wp-bar-text);
+  font-size: 13px;
+}
+
+.wp-adminbar a,
+.wp-adminbar button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 10px;
+  color: var(--wp-bar-text);
+  background: none;
+  border: 0;
+  font: inherit;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.wp-adminbar a:hover,
+.wp-adminbar button:hover,
+.wp-adminbar-user:hover > span,
+.wp-adminbar-user:focus-within > span {
+  color: var(--wp-bar-hover);
+}
+
+.wp-adminbar-menu {
+  display: none !important;
+}
+
+.wp-adminbar-new {
+  position: relative;
+}
+
+.wp-adminbar ul {
+  position: absolute;
+  top: 32px;
+  min-width: 180px;
+  margin: 0;
+  padding: 6px 0;
+  list-style: none;
+  background: var(--wp-sub);
+  box-shadow: 0 3px 5px rgba(0, 0, 0, 0.2);
+}
+
+.wp-adminbar ul a,
+.wp-adminbar ul button {
+  width: 100%;
+  height: 28px;
+  padding: 0 14px;
+}
+
+.wp-adminbar-user {
+  position: relative;
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+  cursor: default;
+}
+
+.wp-adminbar-user ul {
+  right: 0;
+  display: none;
+}
+
+.wp-adminbar-user:hover ul,
+.wp-adminbar-user:focus-within ul {
+  display: block;
+}
+
+.wp-adminbar-role {
+  padding: 4px 14px 8px;
+  color: var(--wp-sub-text);
+}
+
+/* ------------------------------------------------------------ меню вляво */
+
+.wp-menu {
+  position: fixed;
+  top: 32px;
+  bottom: 0;
+  left: 0;
+  z-index: 40;
+  width: 160px;
+  background: var(--wp-menu);
+  display: flex;
+  flex-direction: column;
+}
+
+.wp-menu > ul {
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.wp-menu li {
+  position: relative;
+}
+
+.wp-menu-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 34px;
+  padding: 0 8px 0 10px;
+  color: var(--wp-menu-text) !important;
+  text-decoration: none;
+  font-size: 14px;
+  line-height: 1.3;
+}
+
+.wp-menu-top .wp-icon {
+  color: var(--wp-menu-icon);
+}
+
+.wp-menu li:hover > .wp-menu-top,
+.wp-menu-top:focus-visible {
+  background: var(--wp-menu-hover-bg);
+  color: var(--wp-menu-hover-text) !important;
+}
+
+.wp-menu li:hover > .wp-menu-top .wp-icon {
+  color: var(--wp-menu-hover-text);
+}
+
+.wp-menu li.current > .wp-menu-top {
+  background: var(--wp-current);
+  color: var(--wp-current-text) !important;
+}
+
+.wp-menu li.current > .wp-menu-top .wp-icon {
+  color: var(--wp-current-text);
+}
+
+/* стрелката към съдържанието при текущата точка */
+.wp-menu li.current > .wp-menu-top::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 9px;
+  border: 8px solid transparent;
+  border-right-color: var(--wp-bg);
+}
+
+.wp-submenu {
+  margin: 0;
+  padding: 7px 0 8px;
+  list-style: none;
+  background: var(--wp-sub);
+}
+
+.wp-submenu a {
+  display: block;
+  padding: 5px 12px 5px 38px;
+  color: var(--wp-sub-text) !important;
+  text-decoration: none;
+  font-size: 13px;
+}
+
+.wp-submenu a:hover,
+.wp-submenu a:focus-visible {
+  color: var(--wp-menu-hover-text) !important;
+}
+
+.wp-submenu a.active {
+  color: var(--wp-sub-current) !important;
+  font-weight: 600;
+}
+
+.wp-submenu-head {
+  display: none;
+}
+
+/* Неотворените подменюта излизат встрани при посочване. */
+.wp-menu li:not(.current) > .wp-submenu {
+  display: none;
+  position: absolute;
+  top: 0;
+  left: 160px;
+  min-width: 160px;
+  box-shadow: 0 3px 5px rgba(0, 0, 0, 0.2);
+}
+
+.wp-menu li:not(.current):hover > .wp-submenu,
+.wp-menu li:not(.current):focus-within > .wp-submenu {
+  display: block;
+}
+
+.wp-menu li:not(.current) > .wp-submenu a {
+  padding-left: 14px;
+}
+
+.wp-menu-fold {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 12px 0;
+  padding: 6px 10px;
+  background: none;
+  border: 0;
+  color: var(--wp-menu-icon);
+  font: 13px var(--wp-font);
+  cursor: pointer;
+  text-align: left;
+}
+
+.wp-menu-fold:hover {
+  color: var(--wp-menu-hover-text);
+}
+
+/* свито меню — само иконите */
+.wp.folded .wp-menu {
+  width: 36px;
+}
+
+.wp.folded .wp-menu-name {
+  display: none;
+}
+
+.wp.folded .wp-menu-top {
+  padding: 0 8px;
+  justify-content: center;
+}
+
+.wp.folded .wp-menu-fold .wp-icon {
+  transform: rotate(180deg);
+}
+
+.wp.folded .wp-menu li > .wp-submenu {
+  display: none;
+  position: absolute;
+  top: 0;
+  left: 36px;
+  min-width: 160px;
+  box-shadow: 0 3px 5px rgba(0, 0, 0, 0.2);
+}
+
+.wp.folded .wp-menu li:hover > .wp-submenu,
+.wp.folded .wp-menu li:focus-within > .wp-submenu {
+  display: block;
+}
+
+.wp.folded .wp-submenu a {
+  padding-left: 14px;
+}
+
+.wp.folded .wp-submenu-head {
+  display: block;
+  padding: 3px 14px 6px;
+  color: var(--wp-menu-text);
+  font-weight: 600;
+}
+
+/* ------------------------------------------------------------ работно поле */
+
+.wp-body {
+  margin-left: 160px;
+  padding: 32px 0 64px;
+  min-width: 0;
+}
+
+.wp.folded .wp-body {
+  margin-left: 36px;
+}
+
+.wrap-wp {
+  margin: 10px 20px 0 22px;
+  max-width: 1400px;
+}
+
+.wrap-wp > h1,
+.wp-heading h1 {
+  font-size: 23px;
+  font-weight: 400;
+  line-height: 1.3;
+  margin: 0;
+  padding: 9px 0 4px;
+}
+
+.wrap-wp > h1 {
+  margin-bottom: 12px;
+}
+
+.wp-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  margin-bottom: 8px;
+}
+
+.wp .adm-head h1 {
+  font-size: 23px;
+  font-weight: 400;
+}
+
+.wp .adm-head {
+  margin: 0 0 12px;
+}
+
+/* бутони */
+.wp-btn,
+.wp .adm-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 30px;
+  padding: 0 10px;
+  font: 400 13px/2.15 var(--wp-font);
+  color: var(--wp-accent);
+  background: #f6f7f7;
+  border: 1px solid var(--wp-accent);
+  border-radius: 3px;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.wp-btn:hover,
+.wp .adm-btn:hover {
+  background: #f0f0f1;
+  color: var(--wp-accent-hover);
+  border-color: var(--wp-accent-hover);
+}
+
+.wp-btn.primary,
+.wp .adm-btn.primary {
+  background: var(--wp-accent);
+  border-color: var(--wp-accent);
+  color: var(--wp-accent-text);
+}
+
+.wp-btn.primary:hover,
+.wp .adm-btn.primary:hover {
+  background: var(--wp-accent-hover);
+  border-color: var(--wp-accent-hover);
+  color: var(--wp-accent-text);
+}
+
+.wp .adm-btn.danger {
+  color: var(--wp-red);
+  border-color: var(--wp-red);
+}
+
+.wp .adm-btn.small {
+  min-height: 26px;
+  padding: 0 8px;
+  font-size: 12px;
+  line-height: 2;
+}
+
+.wp-btn.hero {
+  min-height: 46px;
+  padding: 0 28px;
+  font-size: 14px;
+}
+
+.wp-btn:disabled,
+.wp .adm-btn:disabled {
+  color: #a7aaad;
+  background: #f6f7f7;
+  border-color: #dcdcde;
+  cursor: default;
+}
+
+.wp-btn.primary:disabled,
+.wp .adm-btn.primary:disabled {
+  color: #a7aaad;
+  background: #f6f7f7;
+  border-color: #dcdcde;
+}
+
+.wp-linkbtn,
+.wp .adm-link {
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  color: var(--wp-link);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.wp-linkbtn.delete {
+  color: var(--wp-red);
+}
+
+/* полета */
+.wp :is(input:not([type='checkbox']):not([type='radio']):not([type='color']):not([type='range']):not([type='file']), select, textarea) {
+  font: 400 14px/1.4 var(--wp-font);
+  min-height: 30px;
+  padding: 4px 8px;
+  color: #2c3338;
+  background: #fff;
+  border: 1px solid var(--wp-input);
+  border-radius: 4px;
+  box-shadow: 0 0 0 transparent;
+}
+
+.wp :is(input:not([type='checkbox']):not([type='radio']):not([type='color']):not([type='range']):not([type='file']), select, textarea):focus {
+  border-color: var(--wp-accent);
+  box-shadow: 0 0 0 1px var(--wp-accent);
+  outline: 2px solid transparent;
+}
+
+.wp .adm-form label {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+/* панели */
+.wp .adm-card,
+.wp-postbox {
+  background: #fff;
+  border: 1px solid var(--wp-border);
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
+  border-radius: 0;
+}
+
+.wp .adm-card {
+  padding: 16px 20px;
+  margin-bottom: 20px;
+}
+
+.wp .adm-card h2 {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0 0 12px;
+}
+
+.wp-postbox h2 {
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--wp-border);
+}
+
+.wp-postbox > :not(h2) {
+  margin: 12px;
+}
+
+.wp .adm-muted,
+.wp-muted {
+  color: var(--wp-muted);
+  font-size: 13px;
+}
+
+/* съобщения */
+.wp-notice {
+  margin: 5px 0 15px;
+  padding: 1px 12px;
+  background: #fff;
+  border: 1px solid var(--wp-border);
+  border-left: 4px solid #72aee6;
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
+}
+
+.wp-notice p {
+  margin: 0.5em 0;
+}
+
+.wp-notice.success {
+  border-left-color: #00a32a;
+}
+
+.wp-notice.error {
+  border-left-color: #d63638;
+}
+
+.wp .adm-ok {
+  color: #00702a;
+}
+
+.wp .adm-error {
+  color: #b32d2e;
+}
+
+/* раздели */
+.wp .adm-tabs {
+  gap: 0;
+  border-bottom: 1px solid var(--wp-border);
+  margin-bottom: 14px;
+}
+
+.wp .adm-tabs button {
+  margin: 0 4px -1px 0;
+  padding: 5px 12px;
+  font: 600 14px var(--wp-font);
+  color: #50575e;
+  background: #dcdcde;
+  border: 1px solid var(--wp-border);
+}
+
+.wp .adm-tabs button[aria-selected='true'] {
+  color: #000;
+  background: #fff;
+  border-bottom-color: #fff;
+}
+
+/* ------------------------------------------------------------ списъци */
+
+.wp-tablenav {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin: 6px 0 8px;
+}
+
+.wp-tablenav-right {
+  display: flex;
+  gap: 6px;
+}
+
+.wp-subsubsub {
+  display: flex;
+  flex-wrap: wrap;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 13px;
+  color: #646970;
+}
+
+.wp-subsubsub button {
+  background: none;
+  border: 0;
+  padding: 0 2px;
+  font: inherit;
+  color: var(--wp-link);
+  cursor: pointer;
+}
+
+.wp-subsubsub button.current {
+  color: #000;
+  font-weight: 600;
+}
+
+.wp-subsubsub .count {
+  color: #50575e;
+  font-weight: 400;
+}
+
+.wp-list,
+.wp .adm-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+  border: 1px solid var(--wp-border);
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
+  font-size: 13px;
+}
+
+.wp-list th,
+.wp .adm-table th {
+  text-align: left;
+  font-weight: 400;
+  font-size: 14px;
+  color: #2c3338;
+  background: #fff;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--wp-border);
+}
+
+.wp-list td,
+.wp .adm-table td {
+  padding: 8px 10px;
+  vertical-align: top;
+  border-bottom: 0;
+  color: #50575e;
+}
+
+.wp-list tbody tr:nth-child(odd),
+.wp .adm-table tbody tr:nth-child(odd) {
+  background: #f6f7f7;
+}
+
+.wp-list .col-title {
+  width: 60%;
+}
+
+.wp-list .col-date {
+  white-space: nowrap;
+}
+
+.row-title {
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.post-state {
+  color: #50575e;
+  font-weight: 600;
+}
+
+.row-actions {
+  margin-top: 4px;
+  font-size: 13px;
+  color: #a7aaad;
+  visibility: hidden;
+}
+
+.wp-list tr:hover .row-actions,
+.wp-list tr:focus-within .row-actions {
+  visibility: visible;
+}
+
+.row-actions a {
+  text-decoration: none;
+}
+
+.row-actions button {
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  color: var(--wp-red);
+  cursor: pointer;
+}
+
+.wp-count,
+.wp-help {
+  color: var(--wp-muted);
+  font-size: 13px;
+}
+
+/* ------------------------------------------------------------ табло */
+
+.wp-welcome {
+  position: relative;
+  margin-bottom: 20px;
+  padding: 24px 28px 28px;
+  background: #fff;
+  border: 1px solid var(--wp-border);
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
+}
+
+.wp-welcome h2 {
+  font-size: 21px;
+  font-weight: 400;
+  margin: 0 0 4px;
+}
+
+.wp-welcome > p {
+  margin: 0 0 20px;
+  color: #50575e;
+  max-width: 70ch;
+}
+
+.wp-welcome-cols {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 20px 32px;
+}
+
+.wp-welcome h3 {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0 0 10px;
+}
+
+.wp-welcome-links {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 6px;
+}
+
+.wp-welcome-links a {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+}
+
+.wp-welcome-links .wp-icon {
+  color: #787c82;
+}
+
+.wp-dash {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 20px;
+  align-items: start;
+}
+
+.wp-glance {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.wp-glance a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  text-decoration: none;
+}
+
+.wp-glance .wp-icon {
+  color: #787c82;
+}
+
+.wp-activity {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.wp-activity li {
+  display: grid;
+  gap: 1px;
+}
+
+.wp-activity a {
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.wp-excerpt {
+  color: #50575e;
+  font-size: 13px;
+}
+
+/* ------------------------------------------------------------ формата „Добавяне на …“ */
+
+.wp .adm-new {
+  max-width: 900px;
+}
+
+.wp-title-field input {
+  width: 100%;
+  font-size: 1.7em !important;
+  padding: 3px 8px !important;
+  line-height: 1.4 !important;
+}
+
+/* ------------------------------------------------------------ профил: цветова схема */
+
+.wp-schemes {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 10px;
+}
+
+.wp-schemes label {
+  position: relative;
+  display: grid;
+  gap: 6px;
+  padding: 10px 12px;
+  border: 1px solid var(--wp-border);
+  cursor: pointer;
+}
+
+.wp-schemes label.on {
+  border-color: var(--wp-accent);
+  box-shadow: inset 0 0 0 1px var(--wp-accent);
+  background: #f6f7f7;
+}
+
+.wp-schemes input {
+  position: absolute;
+  opacity: 0;
+}
+
+.wp-schemes label:has(input:focus-visible) {
+  outline: 2px solid var(--wp-accent);
+  outline-offset: 2px;
+}
+
+.wp-scheme-sw {
+  display: flex;
+}
+
+.wp-scheme-sw i {
+  width: 36px;
+  height: 22px;
+}
+
+.wp-schemes small {
+  color: var(--wp-muted);
+}
+
+/* ------------------------------------------------------------ телефон */
+
+.wp-menu-backdrop {
+  display: none;
+}
+
+@media (max-width: 782px) {
+  .wp-adminbar,
+  .wp-adminbar a,
+  .wp-adminbar button {
+    height: 46px;
+  }
+
+  .wp-adminbar ul {
+    top: 46px;
+  }
+
+  .wp-adminbar-menu {
+    display: flex !important;
+    padding: 0 12px !important;
+  }
+
+  .wp-adminbar-site span,
+  .wp-adminbar-new span,
+  .wp-adminbar-user > span {
+    display: none;
+  }
+
+  .wp-adminbar-user::before {
+    content: '';
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: var(--wp-bar-text);
+    opacity: 0.25;
+  }
+
+  .wp-menu {
+    top: 46px;
+    width: 190px;
+    transform: translateX(-100%);
+    transition: transform 0.2s ease;
+  }
+
+  .wp.menu-open .wp-menu {
+    transform: none;
+  }
+
+  .wp.menu-open .wp-menu-backdrop {
+    display: block;
+    position: fixed;
+    inset: 46px 0 0;
+    z-index: 30;
+    background: rgba(0, 0, 0, 0.35);
+  }
+
+  .wp.folded .wp-menu {
+    width: 190px;
+  }
+
+  .wp.folded .wp-menu-name {
+    display: inline;
+  }
+
+  .wp-menu li:not(.current) > .wp-submenu,
+  .wp-menu-fold {
+    display: none !important;
+  }
+
+  .wp-body,
+  .wp.folded .wp-body {
+    margin-left: 0;
+    padding-top: 46px;
+  }
+
+  .wrap-wp {
+    margin: 10px 12px 0;
+  }
+
+  .row-actions {
+    visibility: visible;
+  }
+
+  .wp-list .col-title {
+    width: auto;
+  }
+
+  .wp-list,
+  .wp .adm-table {
+    display: block;
+    overflow-x: auto;
+  }
+
+  .wp-tablenav-right,
+  .wp-tablenav-right input {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wp-menu {
+    transition: none;
+  }
+}
+
+/* ============================================================ редактор (като Gutenberg) */
+
+.wp-editor {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  grid-template-rows: 60px minmax(0, 1fr);
+  background: #fff;
+  color: #1e1e1e;
+  font: 400 13px/1.4 var(--wp-font);
+}
+
+.wp-editor-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-right: 12px;
+  border-bottom: 1px solid #e0e0e0;
+  min-width: 0;
+}
+
+.wp-editor-back {
+  display: grid;
+  place-items: center;
+  width: 60px;
+  height: 60px;
+  flex: none;
+  color: #fff;
+  background: var(--wp-bar);
+  border: 0;
+  cursor: pointer;
+}
+
+.wp-editor-back:hover {
+  color: var(--wp-bar-hover);
+}
+
+.wp-editor-doc {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.wp-editor-doc strong {
+  max-width: 40ch;
+  padding: 6px 14px;
+  background: #f0f0f0;
+  border-radius: 4px;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wp-editor-doc span {
+  color: #757575;
+}
+
+.wp-editor-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.wp-editor-status {
+  color: #757575;
+  white-space: nowrap;
+}
+
+.wp-editor .wp-btn {
+  min-height: 36px;
+  padding: 0 12px;
+  border-radius: 2px;
+  font-size: 13px;
+  line-height: 1;
+}
+
+.wp-editor .wp-btn.tertiary {
+  color: #1e1e1e;
+  background: none;
+  border-color: transparent;
+}
+
+.wp-editor .wp-btn.tertiary:hover:not(:disabled) {
+  color: var(--wp-accent);
+}
+
+.wp-editor .wp-btn.tertiary:disabled {
+  color: #949494;
+  background: none;
+  border-color: transparent;
+}
+
+.wp-editor .wp-btn.secondary.block {
+  width: 100%;
+  margin-top: 12px;
+  background: #fff;
+}
+
+.wp-editor-toggle,
+.wp-icon-btn {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  color: #1e1e1e;
+  background: none;
+  border: 0;
+  border-radius: 2px;
+  cursor: pointer;
+}
+
+.wp-editor-toggle.on {
+  color: #fff;
+  background: var(--wp-bar);
+}
+
+.wp-dropdown {
+  position: relative;
+}
+
+.wp-dropdown-menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 6px);
+  z-index: 10;
+  display: grid;
+  min-width: 220px;
+  padding: 8px;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 2px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05), 0 6px 20px rgba(0, 0, 0, 0.08);
+}
+
+.wp-dropdown-menu button,
+.wp-dropdown-menu a {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px 8px 30px;
+  color: #1e1e1e;
+  background: none;
+  border: 0;
+  border-radius: 2px;
+  font: inherit;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  position: relative;
+}
+
+.wp-dropdown-menu a {
+  margin-top: 6px;
+  border-top: 1px solid #e0e0e0;
+  padding-top: 12px;
+}
+
+.wp-dropdown-menu button:hover,
+.wp-dropdown-menu a:hover {
+  color: var(--wp-accent);
+  background: #f0f0f0;
+}
+
+.wp-dropdown-menu [aria-checked='true']::before {
+  content: '✓';
+  position: absolute;
+  left: 10px;
+}
+
+.wp-dropdown-note {
+  margin: 4px 10px 0 30px;
+  color: #757575;
+  font-size: 12px;
+}
+
+.wp-editor-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  min-height: 0;
+}
+
+.wp-editor.with-sidebar .wp-editor-body {
+  grid-template-columns: minmax(0, 1fr) 300px;
+}
+
+.wp-editor-canvas {
+  display: flex;
+  justify-content: center;
+  min-height: 0;
+  background: #ddd;
+}
+
+.wp-editor-canvas iframe {
+  height: 100%;
+  max-width: 100%;
+  border: 0;
+  background: #fff;
+}
+
+.wp-editor-sidebar {
+  overflow-y: auto;
+  border-left: 1px solid #e0e0e0;
+  background: #fff;
+}
+
+.wp-sidebar-head {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 48px;
+  padding-right: 8px;
+  background: #fff;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.wp-sidebar-head [role='tab'] {
+  height: 48px;
+  padding: 0 16px;
+  color: #1e1e1e;
+  background: none;
+  border: 0;
+  font: 500 13px var(--wp-font);
+  cursor: pointer;
+}
+
+.wp-sidebar-head [role='tab'][aria-selected='true'] {
+  box-shadow: inset 0 -3px 0 var(--wp-accent);
+}
+
+.wp-summary {
+  padding: 16px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.wp-summary dl {
+  display: grid;
+  grid-template-columns: 110px minmax(0, 1fr);
+  gap: 10px 12px;
+  margin: 0;
+}
+
+.wp-summary dt {
+  color: #757575;
+}
+
+.wp-summary dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.wp-status-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-right: 4px;
+  border-radius: 50%;
+  background: #00a32a;
+}
+
+.wp-status-dot.draft {
+  background: #dba617;
+}
+
+/* Настройките на страницата в панела: без чекмеджето от редактора */
+.wp-sidebar-settings {
+  padding: 16px;
+  font-size: 13px;
+}
+
+.wp .wp-sidebar-settings label,
+.wp .wp-sidebar-settings .ed-field {
+  font-weight: 500;
+  margin-bottom: 16px;
+}
+
+.wp .wp-sidebar-settings :is(input, textarea) {
+  width: 100%;
+  font-size: 13px;
+}
+
+.wp-sidebar-revisions {
+  padding: 16px;
+}
+
+.wp-sidebar-revisions .ed-modal-head h2 {
+  font-size: 14px;
+}
+
+.wp-sidebar-danger {
+  padding: 16px;
+  border-top: 1px solid #e0e0e0;
+}
+
+.wp-sidebar-loading {
+  padding: 16px;
+}
+
+.wp-snackbar {
+  position: fixed;
+  left: 24px;
+  bottom: 24px;
+  z-index: 120;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: min(600px, calc(100vw - 48px));
+  padding: 12px 20px;
+  background: #1e1e1e;
+  color: #fff;
+  border-radius: 2px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+.wp-snackbar.error {
+  background: #cc1818;
+}
+
+.wp-snackbar .wp-icon-btn {
+  color: #fff;
+  width: 24px;
+  height: 24px;
+}
+
+.wp-editor-missing {
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 12px;
+  min-height: 100vh;
+}
+
+@media (max-width: 960px) {
+  .wp-editor.with-sidebar .wp-editor-body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .wp-editor-sidebar {
+    position: fixed;
+    top: 60px;
+    right: 0;
+    bottom: 0;
+    z-index: 20;
+    width: min(360px, 100vw);
+    box-shadow: -8px 0 24px rgba(0, 0, 0, 0.12);
+  }
+}
+
+@media (max-width: 640px) {
+  .wp-editor-doc span,
+  .wp-editor-status {
+    display: none;
+  }
+
+  .wp-editor-doc strong {
+    max-width: 16ch;
+  }
+
+  .wp-editor-bar {
+    gap: 4px;
+    padding-right: 4px;
+  }
+
+  .wp-editor .wp-btn {
+    padding: 0 8px;
+  }
+
+  .wp-editor .save-draft {
+    display: none;
+  }
+}

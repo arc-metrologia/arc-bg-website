@@ -16,7 +16,9 @@ interface Props {
   media: Record<number, Media>
   onChange(p: Partial<Page>): void
   pickMedia(kind: Media['kind']): Promise<Media[]>
-  onClose(): void
+  /** Без onClose (в страничния панел на админа) няма заглавие и бутон за затваряне. */
+  onClose?(): void
+  className?: string
 }
 
 function Counter({ value, ideal }: { value: string; ideal: [number, number] }) {
@@ -31,7 +33,7 @@ function Counter({ value, ideal }: { value: string; ideal: [number, number] }) {
 }
 
 /** Настройки на страницата: адрес, SEO, кратко описание, снимка за споделяне, свързани страници. */
-export default function PageSettings({ page, media, onChange, pickMedia, onClose }: Props) {
+export default function PageSettings({ page, media, onChange, pickMedia, onClose, className = 'ed-drawer ed-settings' }: Props) {
   const [all, setAll] = useState<Row[]>([])
   const [q, setQ] = useState('')
   useEffect(() => {
@@ -45,13 +47,15 @@ export default function PageSettings({ page, media, onChange, pickMedia, onClose
   const candidates = all.filter((r) => r.id !== page.id && !page.related.includes(r.id) && r.title.toLowerCase().includes(q.toLowerCase())).slice(0, 8)
 
   return (
-    <aside className="ed-drawer ed-settings" aria-label="Настройки на страницата">
-      <div className="ed-modal-head">
-        <h2>Настройки и SEO</h2>
-        <button type="button" onClick={onClose} aria-label="Затвори">
-          ✕
-        </button>
-      </div>
+    <aside className={className} aria-label="Настройки на страницата">
+      {onClose && (
+        <div className="ed-modal-head">
+          <h2>Настройки и SEO</h2>
+          <button type="button" onClick={onClose} aria-label="Затвори">
+            ✕
+          </button>
+        </div>
+      )}
 
       <label>
         Заглавие на страницата
@@ -68,7 +72,7 @@ export default function PageSettings({ page, media, onChange, pickMedia, onClose
             Генерирайте от заглавието
           </button>
         )}
-        <small>При смяна на адреса добавете пренасочване от стария (Админ панел → Пренасочвания), за да не се губят посещения от Google.</small>
+        <small>При смяна на адреса добавете пренасочване от стария (Настройки → Пренасочвания), за да не се губят посещения от Google.</small>
       </label>
 
       <fieldset>
@@ -167,7 +171,7 @@ export default function PageSettings({ page, media, onChange, pickMedia, onClose
         <input value={page.translationKey ?? ''} placeholder="напр. calibration" onChange={(e) => onChange({ translationKey: e.target.value })} />
         <small>Еднакъв ключ на българската и английската версия ги свързва (бутонът за език и hreflang за Google).</small>
       </label>
-      <p className="ed-hint">Промените влизат в сила след „Запазете“.</p>
+      {onClose && <p className="ed-hint">Промените влизат в сила след „Запазете“.</p>}
     </aside>
   )
 }
